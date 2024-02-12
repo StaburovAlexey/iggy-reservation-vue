@@ -1,0 +1,27 @@
+
+main {
+  flex: 1 0 auto;
+}
+
+.auth-conteiner {
+  width: 100%;
+  height: 100svh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo {
+  background-image: url("../assets/logo-black.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  width: 50px;
+  height: 100%;
+}
+
+.main-layout {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
