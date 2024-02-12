@@ -8,7 +8,7 @@ const routes = [
       layout: "auth",
       auth: false,
     },
-    component: ()=> import('../views/LoginApp.vue')
+    component: () => import("../views/LoginApp.vue"),
   },
   {
     path: "/",
@@ -17,7 +17,14 @@ const routes = [
       layout: "main",
       auth: true,
     },
-    component: ()=> import('../views/LoginApp.vue')
+    component: () => import("../views/HomePage.vue"),
+    children: [
+      {
+        path: "/model",
+        name: "model",
+        component: () => import("../views/ModelApp.vue"),
+      },
+    ],
   },
 ];
 

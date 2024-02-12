@@ -8,7 +8,7 @@
     </ul>
     <nav>
       <div class="nav-wrapper indigo darken-3">
-        <a href="#!" class="brand-logo left logo"></a>
+        <a href="#!" class="brand-logo left logo white"></a>
         <ul class="right">
           <li><a class="dropdown-trigger" ref="dropdown" href="#!" data-target="dropdown1">Список броней<i
                 class="material-icons right">arrow_drop_down</i></a></li>
