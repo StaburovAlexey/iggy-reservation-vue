@@ -1,4 +1,5 @@
 <template>
+  <p class="black-text" @click="logout">{{ user }}</p>
   <NavBar></NavBar>
   <BarTheme></BarTheme>
   <FooterApp></FooterApp>
@@ -8,8 +9,19 @@
 import BarTheme from '@/components/BarTheme.vue';
 import FooterApp from '@/components/FooterApp.vue';
 import NavBar from '@/components/NavBar.vue';
+import { supabase } from "@/lib/supabaseClient";
 export default {
-  components: { NavBar, BarTheme, FooterApp }
+  methods: {
+    async logout() {
+      await supabase.auth.signOut();
+    }
+  },
+  components: { NavBar, BarTheme, FooterApp },
+  computed: {
+    user() {
+      return this.$store.getters.user;
+    },
+  },
 }
 </script>
 

@@ -1,3 +1,4 @@
+import { supabase } from "@/lib/supabaseClient";
 import { createRouter, createWebHistory } from "vue-router";
 
 const routes = [
@@ -31,6 +32,22 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
+});
+
+async function getUser(next) {
+  let localUser = await supabase.auth.getSession();
+  if (localUser.data.session == null) {
+    next("/login");
+  } else {
+    next();
+  }
+}
+router.beforeEach((to, from, next) => {
+  if (to.meta.auth) {
+    getUser(next);
+  } else {
+    next();
+  }
 });
 
 export default router;
