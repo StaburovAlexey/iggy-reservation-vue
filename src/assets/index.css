@@ -12,7 +12,7 @@ main {
 }
 
 .logo {
-  background-image: url("../assets/logo-black.png");
+  background-image: url("../assets/logo__white.png");
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
