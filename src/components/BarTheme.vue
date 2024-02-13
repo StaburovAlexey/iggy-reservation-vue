@@ -1,5 +1,6 @@
 <template>
-  <p>{{ reservation }}</p>
+  <p>{{ date }}</p>
+  <p @click="open">{{ reserve }}</p>
   <main class="grey darken-3">
     <div class="row">
       <div class="col s2 offset-s5 green center modal-trigger" data-target="modal8">8</div>
@@ -22,7 +23,7 @@
       <div class="col s3 green center modal-trigger" data-target="modal3">3</div>
       <div class="col s2 offset-s1 green center circle modal-trigger" data-target="modal4">4</div>
       <div class="col s4 green center modal-trigger" data-target="modal5">5</div>
-      <div class="col s2 green center circle modal-trigger" data-target="modal6" @click="findReserveByTable(6)">6</div>
+      <div class="col s2 green center circle modal-trigger" data-target="modal6" @click="findReserveByTable('6')">6</div>
     </div>
     <div class="row"></div>
     <div class="row">
@@ -158,7 +159,7 @@
 export default {
   data() {
     return {
-      curreserve: {}
+      reserve: {}
     }
   },
 
@@ -166,27 +167,30 @@ export default {
     M.AutoInit();
   },
   computed: {
-    reservation() {
-      let purchase
-      // return this.$store.getters.reservation || [];
-      return purchase = JSON.parse(
-        JSON.stringify(this.$store.getters.reservation)
-      );
+    date() {
+      return this.$store.getters.date;
     },
   },
   methods: {
-    // findReserveByTable(table) {
-    //   if (Array.isArray(this.reservation)) {
-    //     const tab = this.reservation.find(reserve => reserve.table === table);
-    //     console.log(tab)
-    //   } else {
-    //     console.log('Reservation is not an array or does not exist');
-    //   }
-    // },
+    async open() {
+      const day = await this.$store.dispatch("fetchInfo");
+      this.reserve = day;
+      console.log(day)
+    },
+
+    async findReserveByTable(table) {
+      const res = this.reserve.find(item => item.table === table);
+      if (res) {
+        console.log(res)
+        return true
+      } else {
+        console.log('не нашел стол', res)
+      }
+    }
   },
   watch: {
-    reservation(newVal) {
-      console.log(newVal)
+    date() {
+      this.open();
     }
   }
 

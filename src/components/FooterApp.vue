@@ -20,9 +20,6 @@ export default {
     };
   },
   watch: {
-    // date(newVal, oldVal) {
-    //   console.log("новое значение", newVal, "старое значение", oldVal);
-    // },
   },
   async mounted() {
     const inst = M.Datepicker.init(this.$refs.datepicker, {
@@ -32,17 +29,19 @@ export default {
     });
     inst.setDate(new Date());
     this.date = this.formatDate(new Date());
+    this.$store.commit("setDate", this.date);
     try {
-        await this.$store.dispatch("fetchInfo", { date: this.date });
-      } catch (e) {
-        console.log(e);
-      }
+      await this.$store.dispatch("fetchInfo");
+    } catch (e) {
+      console.log(e);
+    }
   },
   methods: {
     async updateDate() {
       this.date = this.$refs.datepicker.value;
       try {
-        await this.$store.dispatch("fetchInfo", { date: this.date });
+        this.$store.commit("setDate", this.date);
+        await this.$store.dispatch("fetchInfo");
       } catch (e) {
         console.log(e);
       }
