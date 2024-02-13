@@ -1,4 +1,5 @@
 <template>
+  <p>{{ reservation }}</p>
   <main class="grey darken-3">
     <div class="row">
       <div class="col s2 offset-s5 green center modal-trigger" data-target="modal8">8</div>
@@ -21,7 +22,7 @@
       <div class="col s3 green center modal-trigger" data-target="modal3">3</div>
       <div class="col s2 offset-s1 green center circle modal-trigger" data-target="modal4">4</div>
       <div class="col s4 green center modal-trigger" data-target="modal5">5</div>
-      <div class="col s2 green center circle modal-trigger" data-target="modal6">6</div>
+      <div class="col s2 green center circle modal-trigger" data-target="modal6" @click="findReserveByTable(6)">6</div>
     </div>
     <div class="row"></div>
     <div class="row">
@@ -29,7 +30,7 @@
     </div>
     <div id="modal1" class="modal" ref="modal">
       <div class="modal-content">
-      <p class="number-table">1</p>
+        <p class="number-table">1</p>
         <div class="row row-modal">
           <p class="col s6">Время:</p>
           <div class="input-field col s6">
@@ -155,9 +156,40 @@
 
 <script>
 export default {
+  data() {
+    return {
+      curreserve: {}
+    }
+  },
+
   mounted() {
     M.AutoInit();
   },
+  computed: {
+    reservation() {
+      let purchase
+      // return this.$store.getters.reservation || [];
+      return purchase = JSON.parse(
+        JSON.stringify(this.$store.getters.reservation)
+      );
+    },
+  },
+  methods: {
+    // findReserveByTable(table) {
+    //   if (Array.isArray(this.reservation)) {
+    //     const tab = this.reservation.find(reserve => reserve.table === table);
+    //     console.log(tab)
+    //   } else {
+    //     console.log('Reservation is not an array or does not exist');
+    //   }
+    // },
+  },
+  watch: {
+    reservation(newVal) {
+      console.log(newVal)
+    }
+  }
+
 
 }
 </script>

@@ -4,7 +4,8 @@
       <p class="col s6 white-text">Выбери дату:</p>
       <div class="input-field col s6">
         <i class="material-icons prefix white-text">event</i>
-        <input id="icon_prefix" ref="datepicker" class="datepicker white-text center">
+        <input id="icon_prefix" ref="datepicker" class="datepicker white-text center" v-model="date" type="text"
+          @change="updateDate" />
       </div>
     </div>
   </footer>
@@ -15,20 +16,47 @@ import M from "materialize-css/dist/js/materialize.min";
 export default {
   data() {
     return {
-      date: new Date()
+      date: "",
+    };
+  },
+  watch: {
+    // date(newVal, oldVal) {
+    //   console.log("новое значение", newVal, "старое значение", oldVal);
+    // },
+  },
+  async mounted() {
+    const inst = M.Datepicker.init(this.$refs.datepicker, {
+      format: "dd.mm.yy",
+      autoClose: true,
+      firstDay: 1,
+    });
+    inst.setDate(new Date());
+    this.date = this.formatDate(new Date());
+    try {
+        await this.$store.dispatch("fetchInfo", { date: this.date });
+      } catch (e) {
+        console.log(e);
+      }
+  },
+  methods: {
+    async updateDate() {
+      this.date = this.$refs.datepicker.value;
+      try {
+        await this.$store.dispatch("fetchInfo", { date: this.date });
+      } catch (e) {
+        console.log(e);
+      }
+    },
+    formatDate(date) {
+      const options = {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit"
+      };
+      return new Intl.DateTimeFormat("ru-RU", options).format(date);
     }
   },
-  mounted() {
-
-    const inst = M.Datepicker.init(this.$refs.datepicker, {
-      format: 'dd.mm.yy',
-      autoClose: true,
-      firstDay: 1
-    });
-
-    inst.setDate(new Date());
-  },
-}
+};
 </script>
 
 <style lang="scss" scoped></style>

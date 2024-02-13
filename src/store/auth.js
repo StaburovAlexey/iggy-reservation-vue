@@ -10,7 +10,6 @@ export default {
         email: email,
         password: pass,
       });
-      commit("setUser", data.user);
       if (error) throw error;
     },
   },

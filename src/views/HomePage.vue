@@ -1,5 +1,4 @@
 <template>
-  <p class="black-text" @click="logout">{{ user }}</p>
   <NavBar></NavBar>
   <BarTheme></BarTheme>
   <FooterApp></FooterApp>
@@ -18,10 +17,8 @@ export default {
   },
   components: { NavBar, BarTheme, FooterApp },
   computed: {
-    user() {
-      return this.$store.getters.user;
-    },
   },
+
 }
 </script>
 
