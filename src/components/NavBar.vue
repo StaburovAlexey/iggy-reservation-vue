@@ -1,10 +1,10 @@
 <template>
   <header>
     <ul id="dropdown1" class="dropdown-content">
-      <li><a href="#!">one</a></li>
-      <li><a href="#!">two</a></li>
-      <li class="divider"></li>
-      <li><a href="#!">three</a></li>
+      <li  class="dropdown-li" v-for="(item, index) in reserve" :key="index">
+        Имя: {{ item.name }}<br>Время: {{ item.time }}<br>Номер: {{ item.phone }}<br>Гостей: {{ item.person }}<br>
+        Стол: {{ item.table }}
+      </li>
     </ul>
     <nav>
       <div class="nav-wrapper indigo darken-3">
@@ -21,12 +21,33 @@
 <script>
 import M from "materialize-css/dist/js/materialize.min";
 export default {
+  data() {
+    return {
+      reserve: {},
+    }
+  },
   mounted() {
     M.Dropdown.init(this.$refs.dropdown, {
-      constrainWidth: true,
+      constrainWidth: false,
     });
   },
-
+  computed: {
+    date() {
+      return this.$store.getters.date;
+    },
+  },
+  methods: {
+    async open() {
+      const day = await this.$store.dispatch("fetchInfo");
+      this.reserve = day;
+      // console.log(day)
+    },
+  },
+  watch: {
+    date() {
+      this.open();
+    },
+  }
 }
 </script>
 

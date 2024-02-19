@@ -1,6 +1,6 @@
 <template>
-  <p>{{ date }}</p>
-  <p @click="open">{{ tables }}</p>
+  <!-- <p>{{ date }}</p>
+  <p @click="open">{{ tables }}</p> -->
   <main class="grey darken-3">
     <div class="row">
       <div class="col s2 offset-s5 green center modal-trigger" data-target="modal8" :class="{
@@ -209,7 +209,6 @@ export default {
       }
     }
   },
-
   mounted() {
     M.AutoInit();
   },

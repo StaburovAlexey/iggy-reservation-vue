@@ -61,3 +61,7 @@ main {
   font-size: 17rem;
   opacity: 0.2;
 }
+
+.dropdown-li{
+  border-bottom: 1px solid black;
+}
