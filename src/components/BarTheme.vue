@@ -3,13 +3,13 @@
   <p @click="open">{{ tables }}</p> -->
   <main class="grey darken-3">
     <div class="row">
-      <div class="col s2 offset-s5 green center modal-trigger" data-target="modal8" :class="{
+      <div class="col s2 offset-s5 center modal-trigger" data-target="modal8" :class="{
         'green': tables.table_8 === false,
         'red': tables.table_8
       }">8</div>
     </div>
     <div class="row pull">
-      <div class="col s2 offset-s1 center modal-trigger" data-target="modalPull" :class="{
+      <div class="col s2 offset-s1 center modal-trigger" data-target="modal11" :class="{
         'green': tables.pull === false,
         'red': tables.pull
       }">Pull</div>
@@ -63,133 +63,13 @@
         'red': tables.table_7
       }">7</div>
     </div>
-    <div id="modal1" class="modal" ref="modal">
-      <div class="modal-content">
-        <p class="number-table">1</p>
-        <div class="row row-modal">
-          <p class="col s6">Время:</p>
-          <div class="input-field col s6">
-            <textarea class="materialize-textarea" v-model="time"></textarea>
-          </div>
-        </div>
-        <div class="row row-modal">
-          <p class="col s6">Количество человек:</p>
-          <div class="input-field col s6">
-            <textarea class="materialize-textarea" v-model="person"></textarea>
-          </div>
-        </div>
-        <div class="row row-modal">
-          <p class="col s6">Имя:</p>
-          <div class="input-field col s6">
-            <textarea class="materialize-textarea" v-model="name"></textarea>
-          </div>
-        </div>
-        <div class="row row-modal">
-          <p class="col s6">Телефон:</p>
-          <div class="input-field col s6">
-            <textarea class="materialize-textarea" v-model="tel"></textarea>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="waves-effect waves-green btn-flat">Редактировать</button>
-        <button type="button" class="waves-effect waves-green btn-flat">Удалить</button>
-      </div>
-    </div>
-    <div id="modal2" class="modal" ref="modal">
-      <div class="modal-content">
-        <h4>Modal Header</h4>
-        <p>A bunch of text</p>
-      </div>
-      <div class="modal-footer">
-        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>
-      </div>
-    </div>
-    <div id="modal3" class="modal" ref="modal">
-      <div class="modal-content">
-        <h4>Modal Header</h4>
-        <p>A bunch of text</p>
-      </div>
-      <div class="modal-footer">
-        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>
-      </div>
-    </div>
-    <div id="modal4" class="modal" ref="modal">
-      <div class="modal-content">
-        <h4>Modal Header</h4>
-        <p>A bunch of text</p>
-      </div>
-      <div class="modal-footer">
-        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>
-      </div>
-    </div>
-    <div id="modal5" class="modal" ref="modal">
-      <div class="modal-content">
-        <h4>Modal Header</h4>
-        <p>A bunch of text</p>
-      </div>
-      <div class="modal-footer">
-        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>
-      </div>
-    </div>
-    <div id="modal6" class="modal" ref="modal">
-      <div class="modal-content">
-        <h4>Modal Header</h4>
-        <p>A bunch of text</p>
-      </div>
-      <div class="modal-footer">
-        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>
-      </div>
-    </div>
-    <div id="modal7" class="modal" ref="modal">
-      <div class="modal-content">
-        <h4>Modal Header</h4>
-        <p>A bunch of text</p>
-      </div>
-      <div class="modal-footer">
-        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>
-      </div>
-    </div>
-    <div id="modal8" class="modal" ref="modal">
-      <div class="modal-content">
-        <h4>Modal Header</h4>
-        <p>A bunch of text</p>
-      </div>
-      <div class="modal-footer">
-        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>
-      </div>
-    </div>
-    <div id="modal9" class="modal" ref="modal">
-      <div class="modal-content">
-        <h4>Modal Header</h4>
-        <p>A bunch of text</p>
-      </div>
-      <div class="modal-footer">
-        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>
-      </div>
-    </div>
-    <div id="modal10" class="modal" ref="modal">
-      <div class="modal-content">
-        <h4>Modal Header</h4>
-        <p>A bunch of text</p>
-      </div>
-      <div class="modal-footer">
-        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>
-      </div>
-    </div>
-    <div id="modalPull" class="modal" ref="modal">
-      <div class="modal-content">
-        <h4>Modal Header pull</h4>
-        <p>A bunch of text</p>
-      </div>
-      <div class="modal-footer">
-        <a href="#!" class="modal-close waves-effect waves-green btn-flat">Agree</a>
-      </div>
-    </div>
+    <ModalApp v-for="(table, name, index) in tables" :key="index" :table="table" :numberTable="index + 1"></ModalApp>
   </main>
 </template>
 
 <script>
+import ModalApp from './ModalApp.vue';
+
 export default {
   data() {
     return {
@@ -207,7 +87,7 @@ export default {
         table_10: {},
         pull: {},
       }
-    }
+    };
   },
   mounted() {
     M.AutoInit();
@@ -223,14 +103,14 @@ export default {
       this.reserve = day;
       // console.log(day)
     },
-
     async findReserveByTable(table) {
       const reserve = this.reserve.find(item => item.table === table);
       if (reserve) {
-        return reserve
-      } else {
-        console.log('не нашел стол', reserve)
-        return false
+        return reserve;
+      }
+      else {
+        // console.log('не нашел стол', reserve);
+        return false;
       }
     }
   },
@@ -251,9 +131,8 @@ export default {
       this.tables.table_10 = await this.findReserveByTable('10');
       this.tables.pull = await this.findReserveByTable('pull');
     }
-  }
-
-
+  },
+  components: { ModalApp }
 }
 </script>
 
