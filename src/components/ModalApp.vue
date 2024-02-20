@@ -32,15 +32,14 @@
         @click="$emit('del', { id: table.id })">Удалить</button>
     </div>
     <div class="modal-footer" v-else>
-      <button type="button" class="waves-effect waves-green btn-flat" @click="$emit('del')">Записать</button>
+      <button type="button" class="waves-effect waves-green btn-flat"
+        @click="$emit('creat', { time, person, name, tel, numTable })">Записать</button>
     </div>
 
   </div>
 </template>
 
 <script>
-var elem = document.querySelectorAll('.modal');
-var instance = M.Modal.getInstance(elem);
 export default {
   props: ['table', "numberTable"],
   emits: ['del', 'creat'],
@@ -50,7 +49,11 @@ export default {
       person: "",
       name: "",
       tel: "",
+      numTable: `${this.numberTable}`, // передаем строку из числа в Number
     }
+  },
+  mounted() {
+    M.AutoInit();
   },
   watch: {
     table() {

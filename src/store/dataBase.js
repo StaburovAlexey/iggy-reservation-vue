@@ -18,8 +18,23 @@ export default {
     async delInfo({ dispatch, commit }, { id }) {
       const { error } = await supabase.from("tables").delete().eq("id", id);
       if (error) {
+        throw error;
       }
-      throw error;
+    },
+    async creatInfo({ dispatch, commit, state }, { data }) {
+      const { error } = await supabase
+        .from("tables")
+        .insert({
+          table: `${data.numTable}`,
+          name: data.name,
+          person: data.person,
+          time: data.time,
+          phone: data.tel,
+          date: state.date,
+        });
+      if (error) {
+        throw error;
+      }
     },
   },
   mutations: {

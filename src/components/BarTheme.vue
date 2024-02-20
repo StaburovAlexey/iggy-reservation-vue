@@ -63,7 +63,8 @@
         'red': tables.table_7
       }">7</div>
     </div>
-    <ModalApp v-for="(table, name, index) in tables" :key="index" :table="table" :numberTable="index + 1" @del="delReserve">
+    <ModalApp v-for="(table, name, index) in tables" :key="index" :table="table" :numberTable="index + 1"
+      @del="delReserve" @creat="creatReserve">
     </ModalApp>
   </main>
 </template>
@@ -89,9 +90,6 @@ export default {
       }
     };
   },
-  mounted() {
-    M.AutoInit();
-  },
   computed: {
     date() {
       return this.$store.getters.date;
@@ -100,8 +98,8 @@ export default {
   methods: {
     async open() {
       const day = await this.$store.dispatch("fetchInfo");
-      this.reserve = day;
-      console.log(day)
+      return day;
+      // console.log(day)
 
     },
     async findReserveByTable(table) {
@@ -115,18 +113,30 @@ export default {
       }
     },
     async delReserve(id) {
-      console.log(id)
+      console.log(id.id)
       try {
-        await this.$store.dispatch("delInfo", { id }).then(this.open)
+        await this.$store.dispatch("delInfo", { id: id.id }).then(this.open())
       } catch (error) {
         console.log(error)
       }
 
+    },
+    async creatReserve(data) {
+      console.log(data)
+      try {
+        await this.$store.dispatch("creatInfo", { data }).then(this.open())
+      } catch (error) {
+        console.log("создание", error)
+      }
     }
   },
+  mounted() {
+    M.AutoInit();
+  },
   watch: {
-    date() {
-      this.open();
+    async date() {
+      const day = await this.open()
+      this.reserve = day
     },
     async reserve() {
       this.tables.table_1 = await this.findReserveByTable('1');
