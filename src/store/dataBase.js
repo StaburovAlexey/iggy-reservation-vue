@@ -15,6 +15,12 @@ export default {
       // else commit("setReserve", data);
       else return data;
     },
+    async delInfo({ dispatch, commit }, { id }) {
+      const { error } = await supabase.from("tables").delete().eq("id", id);
+      if (error) {
+      }
+      throw error;
+    },
   },
   mutations: {
     setReserve(state, reservation) {

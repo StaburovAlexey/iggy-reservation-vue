@@ -1,7 +1,7 @@
 <template>
-  <!-- <p>{{ date }}</p>
-  <p @click="open">{{ tables }}</p> -->
-  <main class="grey darken-3">
+  <!-- <p>{{ date }}</p> -->
+  <p @click="open">{{ tables }}</p>
+  <main class="grey darken-3 main">
     <div class="row">
       <div class="col s2 offset-s5 center modal-trigger" data-target="modal8" :class="{
         'green': tables.table_8 === false,
@@ -63,13 +63,13 @@
         'red': tables.table_7
       }">7</div>
     </div>
-    <ModalApp v-for="(table, name, index) in tables" :key="index" :table="table" :numberTable="index + 1"></ModalApp>
+    <ModalApp v-for="(table, name, index) in tables" :key="index" :table="table" :numberTable="index + 1" @del="delReserve">
+    </ModalApp>
   </main>
 </template>
 
 <script>
 import ModalApp from './ModalApp.vue';
-
 export default {
   data() {
     return {
@@ -101,7 +101,8 @@ export default {
     async open() {
       const day = await this.$store.dispatch("fetchInfo");
       this.reserve = day;
-      // console.log(day)
+      console.log(day)
+
     },
     async findReserveByTable(table) {
       const reserve = this.reserve.find(item => item.table === table);
@@ -112,6 +113,15 @@ export default {
         // console.log('не нашел стол', reserve);
         return false;
       }
+    },
+    async delReserve(id) {
+      console.log(id)
+      try {
+        await this.$store.dispatch("delInfo", { id }).then(this.open)
+      } catch (error) {
+        console.log(error)
+      }
+
     }
   },
   watch: {

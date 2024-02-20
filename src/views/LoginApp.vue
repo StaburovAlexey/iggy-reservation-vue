@@ -45,6 +45,7 @@ export default {
           this.loading = false;
         } catch (e) {
           alert(e);
+          console.log(e)
           this.loading = false;
         }
     }

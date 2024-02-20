@@ -27,16 +27,23 @@
         </div>
       </div>
     </div>
-    <div class="modal-footer">
-      <button type="button" class="waves-effect waves-green btn-flat">Редактировать</button>
-      <button type="button" class="waves-effect waves-green btn-flat">Удалить</button>
+    <div class="modal-footer" v-if="table">
+      <button type="button" class="waves-effect waves-green btn-flat"
+        @click="$emit('del', { id: table.id })">Удалить</button>
     </div>
+    <div class="modal-footer" v-else>
+      <button type="button" class="waves-effect waves-green btn-flat" @click="$emit('del')">Записать</button>
+    </div>
+
   </div>
 </template>
 
 <script>
+var elem = document.querySelectorAll('.modal');
+var instance = M.Modal.getInstance(elem);
 export default {
   props: ['table', "numberTable"],
+  emits: ['del', 'creat'],
   data() {
     return {
       time: "",
@@ -52,6 +59,9 @@ export default {
       this.name = this.table.name
       this.tel = this.table.phone
     }
+  },
+  methods: {
+
   }
 
 }
