@@ -6,35 +6,41 @@ export default {
     date: "",
   },
   actions: {
-    async fetchInfo({ dispatch, commit, state }) {
+    async fetchInfo({ commit, state }) {
       const { data, error } = await supabase
         .from("tables")
         .select()
         .eq("date", state.date);
-      if (error) throw error;
-      // else commit("setReserve", data);
-      else return data;
-    },
-    async delInfo({ dispatch, commit }, { id }) {
-      const { error } = await supabase.from("tables").delete().eq("id", id);
       if (error) {
         throw error;
+      } else {
+        commit("setReserve", data);
+        return data;
       }
     },
-    async creatInfo({ dispatch, commit, state }, { data }) {
-      const { error } = await supabase
+    async delInfo({ id }) {
+      const { error, status } = await supabase
         .from("tables")
-        .insert({
-          table: `${data.numTable}`,
-          name: data.name,
-          person: data.person,
-          time: data.time,
-          phone: data.tel,
-          date: state.date,
-        });
+        .delete()
+        .eq("id", id);
       if (error) {
         throw error;
       }
+      return status;
+    },
+    async creatInfo({ state }, { data }) {
+      const { error, status } = await supabase.from("tables").insert({
+        table: `${data.numTable}`,
+        name: data.name,
+        person: data.person,
+        time: data.time,
+        phone: data.tel,
+        date: state.date,
+      });
+      if (error) {
+        console.log(error);
+      }
+      return status;
     },
   },
   mutations: {

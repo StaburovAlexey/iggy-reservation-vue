@@ -5,8 +5,8 @@ export default {
     user: {},
   },
   actions: {
-    async login({ dispatch, commit }, { email, pass }) {
-      const { data, error } = await supabase.auth.signInWithPassword({
+    async login({ email, pass }) {
+      const { error } = await supabase.auth.signInWithPassword({
         email: email,
         password: pass,
       });

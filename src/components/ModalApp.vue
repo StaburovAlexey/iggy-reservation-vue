@@ -28,21 +28,30 @@
       </div>
     </div>
     <div class="modal-footer" v-if="table">
-      <button type="button" class="waves-effect waves-green btn-flat"
-        @click="$emit('del', { id: table.id })">Удалить</button>
+      <button
+        type="button"
+        class="waves-effect waves-green btn-flat"
+        @click="$emit('del', { id: table.id })"
+      >
+        Удалить
+      </button>
     </div>
     <div class="modal-footer" v-else>
-      <button type="button" class="waves-effect waves-green btn-flat"
-        @click="$emit('creat', { time, person, name, tel, numTable })">Записать</button>
+      <button
+        type="button"
+        class="waves-effect waves-green btn-flat"
+        @click="$emit('creat', { time, person, name, tel, numTable })"
+      >
+        Записать
+      </button>
     </div>
-
   </div>
 </template>
 
 <script>
 export default {
-  props: ['table', "numberTable"],
-  emits: ['del', 'creat'],
+  props: ["table", "numberTable"],
+  emits: ["del", "creat"],
   data() {
     return {
       time: "",
@@ -50,24 +59,22 @@ export default {
       name: "",
       tel: "",
       numTable: `${this.numberTable}`, // передаем строку из числа в Number
-    }
+    };
   },
   mounted() {
-    M.AutoInit();
+    // var elems = document.querySelectorAll(".modal");
+    // var instances = M.Modal.init(elems, {});
   },
   watch: {
     table() {
-      this.time = this.table.time
-      this.person = this.table.person
-      this.name = this.table.name
-      this.tel = this.table.phone
-    }
+      this.time = this.table.time;
+      this.person = this.table.person;
+      this.name = this.table.name;
+      this.tel = this.table.phone;
+    },
   },
-  methods: {
-
-  }
-
-}
+  methods: {},
+};
 </script>
 
 <style lang="scss" scoped></style>

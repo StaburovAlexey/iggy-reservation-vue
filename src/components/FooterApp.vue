@@ -4,8 +4,14 @@
       <p class="col s6 white-text">Выбери дату:</p>
       <div class="input-field col s6">
         <i class="material-icons prefix white-text">event</i>
-        <input id="icon_prefix" ref="datepicker" class="datepicker white-text center" v-model="date" type="text"
-          @change="updateDate" />
+        <input
+          id="icon_prefix"
+          ref="datepicker"
+          class="datepicker white-text center"
+          v-model="date"
+          type="text"
+          @change="updateDate"
+        />
       </div>
     </div>
   </footer>
@@ -19,10 +25,9 @@ export default {
       date: "",
     };
   },
-  watch: {
-  },
+  watch: {},
   async mounted() {
-    const inst = M.Datepicker.init(this.$refs.datepicker, {
+    const inst = await M.Datepicker.init(this.$refs.datepicker, {
       format: "dd.mm.yy",
       autoClose: true,
       firstDay: 1,
@@ -50,12 +55,12 @@ export default {
       const options = {
         day: "2-digit",
         month: "2-digit",
-        year: "2-digit"
+        year: "2-digit",
       };
       return new Intl.DateTimeFormat("ru-RU", options).format(date);
-    }
+    },
   },
 };
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss"></style>
