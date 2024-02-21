@@ -31,6 +31,7 @@ export default {
       format: "dd.mm.yy",
       autoClose: true,
       firstDay: 1,
+      // container:
     });
     inst.setDate(new Date());
     this.date = this.formatDate(new Date());

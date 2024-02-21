@@ -50,7 +50,7 @@ export default {
     async open() {
       const day = await this.$store.dispatch("fetchInfo");
       this.reserve = day;
-      console.log("open nav", day);
+      // console.log("open nav", day);
     },
   },
   watch: {

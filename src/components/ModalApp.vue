@@ -62,8 +62,8 @@ export default {
     };
   },
   mounted() {
-    // var elems = document.querySelectorAll(".modal");
-    // var instances = M.Modal.init(elems, {});
+    var elems = document.querySelectorAll(".modal");
+    var instances = M.Modal.init(elems, {});
   },
   watch: {
     table() {

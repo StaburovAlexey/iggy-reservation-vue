@@ -2,6 +2,19 @@
   width: 100%;
   height: 60vh;
   flex: 1 0 auto;
+  position: relative;
+}
+
+.room {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  left: 0;
+  height: 20px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 .main-loader {
   width: 100%;
@@ -45,14 +58,10 @@
   height: 100%;
 }
 .pull {
-  height: 12%;
+  /* height: 12%; */
 }
 .divider {
   margin: 0 0 0 0;
-}
-.modal {
-  position: relative;
-  z-index: 1;
 }
 
 .number-table {
@@ -70,6 +79,6 @@
   opacity: 0.2;
 }
 
-.dropdown-li{
+.dropdown-li {
   border-bottom: 1px solid black;
 }
