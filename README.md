@@ -2,6 +2,7 @@
 1. Для верстки использован Materialize
 2. Фронт сделан с помощью Vue Options Api, vuex и router.
 3. Для базы данных использовал Supabase.
+   
 ![1](https://github.com/StaburovAlexey/iggy-reservation-vue/assets/121376881/b2c7fbbb-5959-4319-97ab-3b620b2773d6)
 ![2](https://github.com/StaburovAlexey/iggy-reservation-vue/assets/121376881/f96bebaf-85cf-445d-bc08-137131a0d7f3)
 ![3](https://github.com/StaburovAlexey/iggy-reservation-vue/assets/121376881/68c36423-594b-4478-b80f-dc22c2e1bc26)
