@@ -5,7 +5,7 @@
       <div class="row row-modal">
         <p class="col s6">Время:</p>
         <div class="input-field col s6">
-          <textarea class="materialize-textarea" v-model="time"></textarea>
+          <input class="materialize-textarea" v-model="time">
         </div>
       </div>
       <div class="row row-modal">
@@ -27,25 +27,18 @@
         </div>
       </div>
     </div>
-    <div class="modal-footer" v-if="table">
-      <button
-        type="button"
-        class="waves-effect waves-green btn-flat"
-        @click="$emit('del', { id: table.id })"
-      >
-        Удалить
-      </button>
+      <div class="modal-footer" v-if="table">
+        <button type="button" class="waves-effect waves-green btn-flat" @click="$emit('del', { id: table.id })">
+          Удалить
+        </button>
+      </div>
+      <div class="modal-footer" v-else>
+        <button type="button" class="waves-effect waves-green btn-flat"
+          @click="$emit('creat', { time, person, name, tel, numTable })">
+          Записать
+        </button>
+      </div>
     </div>
-    <div class="modal-footer" v-else>
-      <button
-        type="button"
-        class="waves-effect waves-green btn-flat"
-        @click="$emit('creat', { time, person, name, tel, numTable })"
-      >
-        Записать
-      </button>
-    </div>
-  </div>
 </template>
 
 <script>
@@ -59,6 +52,7 @@ export default {
       name: "",
       tel: "",
       numTable: `${this.numberTable}`, // передаем строку из числа в Number
+      loading: false,
     };
   },
   mounted() {
