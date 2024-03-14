@@ -18,14 +18,14 @@ export default {
         return data;
       }
     },
-    async delInfo({},{ id }) {
-      console.log('del', id)
+    async delInfo({}, { id }) {
+      console.log("del", id);
       const { error, status } = await supabase
         .from("tables")
         .delete()
         .eq("id", id);
       if (error) {
-        console.log('del', error);
+        console.log("del", error);
       }
       return status;
     },

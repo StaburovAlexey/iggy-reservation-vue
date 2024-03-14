@@ -98,3 +98,13 @@
 .btn-nav{
   margin: 10px 10px 0 0;
 }
+
+.list-pull{
+  position: relative;
+  z-index: 10;
+  background-color: transparent;
+}
+
+.list-pull li {
+  background-color: transparent;
+}

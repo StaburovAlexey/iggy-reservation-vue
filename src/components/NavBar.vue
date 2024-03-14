@@ -3,28 +3,35 @@
     <nav>
       <div class="nav-wrapper indigo darken-3">
         <a href="#!" class="brand-logo left logo white"></a>
-        <button class="btn right btn-nav modal-trigger" data-target="modal12" :class="{
-          red: reserve.room == true,
-        }"> Аренда комнаты </button>
+        <button
+          class="btn right btn-nav modal-trigger"
+          data-target="modal12"
+          :class="{
+            red: reserve.room == true,
+          }"
+        >
+          Аренда комнаты
+        </button>
       </div>
     </nav>
-    <ModalApp :table="reserve.room" :numberTable="12" @del="delReserve" @creat="creatReserve">
+    <ModalApp
+      :table="reserve.room"
+      :numberTable="12"
+      @del="delReserve"
+      @creat="creatReserve"
+    >
     </ModalApp>
   </header>
 </template>
 
 <script>
-import M from "materialize-css/dist/js/materialize.min";
-import ModalApp from "./ModalApp.vue";
 export default {
   data() {
     return {
       reserve: {},
     };
   },
-  mounted() {
-
-  },
+  mounted() {},
   computed: {
     date() {
       return this.$store.getters.date;
@@ -34,11 +41,11 @@ export default {
     async open() {
       const day = await this.$store.dispatch("fetchInfo");
       this.reserve = day;
-      console.log(this.reserve)
-      console.log("open nav", day);
+      console.log(this.reserve);
+      // console.log("open nav", day);
     },
     async delReserve(id) {
-      console.log('delreserve', id.id);
+      console.log("delreserve", id.id);
       this.loading = true;
       const status = await this.$store.dispatch("delInfo", { id: id.id });
       if (status == "204") {
