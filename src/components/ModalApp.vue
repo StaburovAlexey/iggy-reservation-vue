@@ -95,7 +95,7 @@ var instances = M.Modal.init(elems, {});
       this.person = this.table.person;
       this.name = this.table.name;
       this.tel = this.table.phone;
-      console.log("table", this.table);
+      // console.log("table", this.table);
     },
   },
   methods: {
