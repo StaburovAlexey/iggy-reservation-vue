@@ -13,9 +13,7 @@ export async function sendPushMessage(data) {
         text,
       }),
     });
-    console.log("получилось");
   } catch (error) {
-    // throw error;
-    console.log("не получилось", error);
+    throw error;
   }
 }
