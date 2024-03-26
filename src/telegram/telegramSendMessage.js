@@ -1,4 +1,4 @@
-import { API, TELEGRAM_CHAT_ID} from "@/lib/telegramApi";
+import { API, TELEGRAM_CHAT_ID } from "@/lib/telegramApi";
 
 export async function sendPushMessage(data) {
   const text = `Новая бронь! Не проеби, там ${data.person} человек в ${data.time} и возможно на сегодня. но это не точно....`;

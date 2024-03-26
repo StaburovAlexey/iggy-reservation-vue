@@ -72,6 +72,7 @@
 </template>
 
 <script>
+
 export default {
   props: ["table", "numberTable"],
   emits: ["del", "creat"],
@@ -87,7 +88,7 @@ export default {
   },
   mounted() {
     var elems = document.querySelectorAll(".modal");
-var instances = M.Modal.init(elems, {});
+    var instances = M.Modal.init(elems, {});
   },
   watch: {
     table() {
