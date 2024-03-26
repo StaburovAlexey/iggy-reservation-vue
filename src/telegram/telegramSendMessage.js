@@ -1,7 +1,8 @@
 import { API, TELEGRAM_CHAT_ID } from "@/lib/telegramApi";
 
-export async function sendPushMessage(data) {
-  const text = `Новая бронь! Не проеби, там ${data.person} человек в ${data.time} и возможно на сегодня. но это не точно....`;
+export async function sendPushMessage(data, date) {
+  const text = `Новая бронь! Не проеби, там ${data.person} человек в ${data.time} на ${date}`;
+  // const text = 'теперь должно все работать, даже в закрытой группе'
   try {
     const response = await fetch(API, {
       method: "POST",

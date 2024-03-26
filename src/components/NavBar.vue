@@ -33,8 +33,6 @@ export default {
     async open() {
       const day = await this.$store.dispatch("fetchInfo");
       this.reserve = day;
-      console.log(this.reserve);
-      // console.log("open nav", day);
     },
     async delReserve(id) {
       console.log("delreserve", id.id);
