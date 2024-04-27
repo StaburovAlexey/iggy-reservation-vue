@@ -3,27 +3,35 @@
     <nav>
       <div class="nav-wrapper indigo darken-3">
         <a href="#!" class="brand-logo left logo white" @click="close"></a>
-        <button class="btn right btn-nav modal-trigger" data-target="modal12" :class="{
-          red: reserve.room == true,
-        }">
+        <button
+          class="btn right btn-nav modal-trigger"
+          data-target="modal12"
+          :class="{
+            red: reserve.room == true,
+          }"
+        >
           Аренда комнаты
         </button>
       </div>
     </nav>
-    <ModalApp :table="reserve.room" :numberTable="12" @del="delReserve" @creat="creatReserve">
+    <ModalApp
+      :table="reserve.room"
+      :numberTable="12"
+      @del="delReserve"
+      @creat="creatReserve"
+    >
     </ModalApp>
   </header>
 </template>
 
 <script>
-
 export default {
   data() {
     return {
       reserve: {},
     };
   },
-  mounted() { },
+  mounted() {},
   computed: {
     date() {
       return this.$store.getters.date;

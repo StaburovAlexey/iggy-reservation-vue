@@ -1,6 +1,6 @@
 <template>
   <div :id="`modal${numberTable}`" class="modal">
-    <ul class="collection with-header list-pull" v-if="numberTable == 11">
+    <ul class="collection with-header list-pull">
       <li class="collection-item" v-for="res in table" :key="res.id">
         <span>Время: {{ res.time }}</span
         ><br />
@@ -39,7 +39,7 @@
         </div>
       </div>
     </div>
-    <div v-if="numberTable !== 11">
+    <!-- <div v-if="numberTable !== 11 && numberTable !== 5">
       <div class="modal-footer" v-if="table">
         <button
           type="button"
@@ -49,7 +49,7 @@
           Удалить
         </button>
       </div>
-      <div class="modal-footer" v-else>
+      <div class="modal-footer">
         <button
           type="button"
           class="waves-effect waves-green btn-flat"
@@ -58,8 +58,8 @@
           Записать
         </button>
       </div>
-    </div>
-    <div class="modal-footer" v-else="numberTable == 11">
+    </div> -->
+    <div class="modal-footer">
       <button
         type="button"
         class="waves-effect waves-green btn-flat"
@@ -72,7 +72,6 @@
 </template>
 
 <script>
-
 export default {
   props: ["table", "numberTable"],
   emits: ["del", "creat"],
