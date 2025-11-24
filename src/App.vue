@@ -18,6 +18,5 @@ const layout = computed(() =>
 </script>
 
 <style lang="css">
-@import "~materialize-css/dist/css/materialize.min.css";
 @import "./assets/index.css";
 </style>
