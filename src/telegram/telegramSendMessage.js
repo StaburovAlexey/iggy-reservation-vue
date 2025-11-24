@@ -3,15 +3,15 @@ import { API, TELEGRAM_CHAT_ID } from "@/lib/telegramApi";
 export async function sendPushMessage(data, date) {
   if (!API || !TELEGRAM_CHAT_ID) {
     console.warn(
-      "Телеграм токен или chat_id не заданы. Отправка уведомления пропущена."
+      "Телеграм токен или chat_id не заданы. Укажите переменные и повторите отправку."
     );
     return;
   }
 
-  const text = `Новая бронь на ${data.time || "-"} (${date || "-"})\n
-  Имя ${data.name || "-"}
-  Гостей: ${data.person || "-"}
-  Телефон: ${data.tel || "-"}`;
+  const text = `Новая бронь: ${data.time || "-"} (${date || "-"})
+Гость: ${data.name || "-"}
+Гостей: ${data.person || "-"}
+Телефон: ${data.tel || "-"}`;
 
   try {
     await fetch(API, {
