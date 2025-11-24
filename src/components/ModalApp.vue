@@ -1,15 +1,13 @@
 <template>
-  <div :id="`modal${numberTable}`" class="modal">
+  <div :id="modalId" class="modal">
     <ul class="collection with-header list-pull">
       <li class="collection-item" v-for="res in table" :key="res.id">
-        <span>Время: {{ res.time }}</span
-        ><br />
-        <span>Телефон: {{ res.phone }}</span
-        ><br />
-        <span>Имя: {{ res.name }}</span>
-        <a class="secondary-content" @click="$emit('del', { id: res.id })"
-          ><i class="material-icons">delete</i></a
-        >
+        <span>Время: {{ res.time }}</span><br />
+        <span>Телефон: {{ res.phone }}</span><br />
+        <span>Гости: {{ res.name }}</span>
+        <a class="secondary-content" @click="emitDelete(res.id)">
+          <i class="material-icons">delete</i>
+        </a>
       </li>
     </ul>
     <div class="modal-content">
@@ -21,7 +19,7 @@
         </div>
       </div>
       <div class="row row-modal">
-        <p class="col s6">Количество человек:</p>
+        <p class="col s6">Количество гостей:</p>
         <div class="input-field col s6">
           <textarea class="materialize-textarea" v-model="person"></textarea>
         </div>
@@ -39,71 +37,73 @@
         </div>
       </div>
     </div>
-    <!-- <div v-if="numberTable !== 11 && numberTable !== 5">
-      <div class="modal-footer" v-if="table">
-        <button
-          type="button"
-          class="waves-effect waves-green btn-flat"
-          @click="$emit('del', { id: table.id })"
-        >
-          Удалить
-        </button>
-      </div>
-      <div class="modal-footer">
-        <button
-          type="button"
-          class="waves-effect waves-green btn-flat"
-          @click="$emit('creat', { time, person, name, tel, numTable })"
-        >
-          Записать
-        </button>
-      </div>
-    </div> -->
     <div class="modal-footer">
       <button
         type="button"
         class="waves-effect waves-green btn-flat"
-        @click="$emit('creat', { time, person, name, tel, numTable })"
+        @click="emitCreate"
       >
-        Записать
+        Сохранить
       </button>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  props: ["table", "numberTable"],
-  emits: ["del", "creat"],
-  data() {
-    return {
-      time: "",
-      person: "",
-      name: "",
-      tel: "",
-      numTable: `${this.numberTable}`, // передаем строку из числа в Number
-      loading: false,
-    };
+<script setup>
+import { computed, onMounted, ref, watch } from "vue";
+
+const props = defineProps({
+  table: {
+    type: Array,
+    default: () => [],
   },
-  mounted() {
-    var elems = document.querySelectorAll(".modal");
-    var instances = M.Modal.init(elems, {});
+  numberTable: {
+    type: [Number, String],
+    default: "",
   },
-  watch: {
-    table() {
-      this.time = this.table.time;
-      this.person = this.table.person;
-      this.name = this.table.name;
-      this.tel = this.table.phone;
-      // console.log("table", this.table);
-    },
-  },
-  methods: {
-    click() {
-      console.log("click");
-    },
-  },
+});
+
+const emit = defineEmits(["del", "creat"]);
+
+const time = ref("");
+const person = ref("");
+const name = ref("");
+const tel = ref("");
+
+const modalId = computed(() => `modal${props.numberTable}`);
+const numTable = computed(() => String(props.numberTable));
+
+const fillForm = (tableData) => {
+  const first = tableData?.[0];
+  time.value = first?.time || "";
+  person.value = first?.person || "";
+  name.value = first?.name || "";
+  tel.value = first?.phone || "";
 };
+
+const emitCreate = () =>
+  emit("creat", {
+    time: time.value,
+    person: person.value,
+    name: name.value,
+    tel: tel.value,
+    numTable: numTable.value,
+  });
+
+const emitDelete = (id) => emit("del", { id });
+
+onMounted(() => {
+  const modals = document.querySelectorAll(".modal");
+  if (window.M?.Modal) {
+    window.M.Modal.init(modals);
+  }
+});
+
+watch(
+  () => props.table,
+  (value) => fillForm(value),
+  { deep: true, immediate: true }
+);
 </script>
 
 <style lang="scss" scoped></style>
