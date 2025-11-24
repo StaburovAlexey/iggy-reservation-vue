@@ -1,9 +1,9 @@
-const TELEGRAM_BOT_TOKEN = process.env.VUE_APP_TELEGRAM_BOT_TOKEN || "";
-export const TELEGRAM_CHAT_ID = process.env.VUE_APP_TELEGRAM_CHAT_ID || "";
+const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN || "";
+export const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID || "";
 
 if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
   console.warn(
-    "Не заданы VUE_APP_TELEGRAM_BOT_TOKEN и VUE_APP_TELEGRAM_CHAT_ID. Укажите их в .env.local."
+    "Не заданы VITE_TELEGRAM_BOT_TOKEN и VITE_TELEGRAM_CHAT_ID. Укажите их в .env.local."
   );
 }
 
