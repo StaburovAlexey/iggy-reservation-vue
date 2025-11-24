@@ -1,38 +1,36 @@
 <template>
-  <form class="card white" @submit.prevent="submit">
-    <div class="card-content">
-      <div class="center">
+  <div class="auth">
+    <el-card class="auth__card" shadow="hover">
+      <div class="auth__logo">
         <img class="logo-auth" src="../assets/logo-black.png" alt="logo" />
       </div>
-      <div class="input-field">
-        <i class="material-icons prefix">account_circle</i>
-        <input id="icon_prefix" type="email" class="validate" v-model="email" />
-        <label for="icon_prefix">Ваш e-mail</label>
-      </div>
-      <div class="input-field">
-        <i class="material-icons prefix">border_color</i>
-        <input id="password" type="password" class="validate" v-model="pass" />
-        <label for="password">Пароль</label>
-      </div>
-      <div class="center">
-        <PreloaderApp v-if="loading" />
-        <button
-          v-else
-          class="btn waves-effect waves-light center"
-          type="submit"
-          name="action"
-          :disabled="disabled"
-        >
-          Войти
-          <i class="material-icons right">send</i>
-        </button>
-      </div>
-    </div>
-  </form>
+      <el-form :model="form" label-position="top" @submit.prevent>
+        <el-form-item label="Ваш e-mail">
+          <el-input v-model="form.email" type="email" placeholder="you@example.com" />
+        </el-form-item>
+        <el-form-item label="Пароль">
+          <el-input v-model="form.pass" type="password" show-password />
+        </el-form-item>
+        <div class="auth__actions">
+          <PreloaderApp v-if="loading" />
+          <el-button
+            v-else
+            type="primary"
+            size="large"
+            :disabled="disabled"
+            @click="submit"
+          >
+            Войти
+          </el-button>
+        </div>
+      </el-form>
+    </el-card>
+  </div>
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { ElMessage } from "element-plus";
+import { computed, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
 import PreloaderApp from "@/components/PreloaderApp.vue";
@@ -40,19 +38,21 @@ import PreloaderApp from "@/components/PreloaderApp.vue";
 const store = useStore();
 const router = useRouter();
 
-const email = ref("");
-const pass = ref("");
+const form = reactive({
+  email: "",
+  pass: "",
+});
 const loading = ref(false);
 
-const disabled = computed(() => !email.value || !pass.value);
+const disabled = computed(() => !form.email || !form.pass);
 
 const submit = async () => {
   loading.value = true;
   try {
-    await store.dispatch("login", { email: email.value, pass: pass.value });
+    await store.dispatch("login", { email: form.email, pass: form.pass });
     router.push("/");
   } catch (error) {
-    alert(error);
+    ElMessage.error("Ошибка авторизации");
     console.log(error);
   } finally {
     loading.value = false;
@@ -60,4 +60,36 @@ const submit = async () => {
 };
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.auth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+}
+
+.auth__card {
+  width: 100%;
+  max-width: 400px;
+  background: #0b1220;
+  color: #e5e7eb;
+  border: 1px solid #1f2937;
+}
+
+.auth__logo {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.logo-auth {
+  width: 96px;
+  height: auto;
+}
+
+.auth__actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+</style>
