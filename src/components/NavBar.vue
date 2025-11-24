@@ -5,9 +5,9 @@
       <span class="navbar__title">IGGY Reservation</span>
     </div>
     <div class="navbar__actions">
-      <el-tag :type="isRoomReserved ? 'danger' : 'success'" effect="dark">
+      <!-- <el-tag :type="isRoomReserved ? 'danger' : 'success'" effect="dark">
         {{ isRoomReserved ? "Зал занят" : "Зал свободен" }}
-      </el-tag>
+      </el-tag> -->
       <el-button
         type="primary"
         :plain="!isRoomReserved"
@@ -42,9 +42,9 @@ const refresh = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #111827;
+  background: #535353;
   color: #e5e7eb;
-  padding: 12px 16px;
+  padding: 6px 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 

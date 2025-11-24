@@ -1,60 +1,37 @@
 <template>
   <div class="plan" v-loading="loading">
     <div class="plan__header">
-      <div>
-        <p class="plan__title">План зала</p>
-        <p class="plan__subtitle">Нажмите на стол, чтобы открыть бронь</p>
-      </div>
+      <p class="plan__title">План зала</p>
       <el-tag :type="isRoomReserved ? 'danger' : 'success'" effect="dark">
         {{ isRoomReserved ? "Зал занят" : "Зал свободен" }}
       </el-tag>
+      <p class="plan__subtitle">Нажмите на стол, чтобы открыть бронь</p>
     </div>
 
     <div class="plan__canvas">
-      <svg
-        width="100%"
-        height="100%"
-        viewBox="0 0 214 325"
-        preserveAspectRatio="xMidYMid meet"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <rect x="0" y="0" width="100%" height="100%" fill="#0b1220" />
+      <svg width="100%" viewBox="0 0 214 325" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="100%" fill="#0b1220" />
         <line x1="0" y1="120" x2="100%" y2="120" stroke="#1f2937" stroke-width="2" />
 
         <!-- Зал (12) -->
-        <g class="hall" @click="openRoom">
+        <g class="hall" @click="openRoom" v-if="!isRoomReserved">
           <rect x="0" y="0" width="100%" height="120" fill="url(#hallGradient)" />
-          <text x="50%" y="60" text-anchor="middle" font-size="22" fill="#0b1220" font-weight="700">
-            Зал
-          </text>
         </g>
 
-        <g
-          v-for="table in svgTables"
-          :key="table.id"
-          :transform="table.transform"
-          class="table-node"
-          @click="openTable(table.id)"
-        >
-          <component
-            :is="table.shape"
-            v-bind="table.shapeProps"
-            :fill="tableColor(table.id)"
-            stroke="#111827"
-            stroke-width="2"
-          />
-          <text
-            x="0"
-            y="4"
-            text-anchor="middle"
-            font-size="12"
-            fill="#0b1220"
-            font-weight="700"
-          >
+        <g v-for="table in svgTables" :key="table.id" :transform="table.transform" class="table-node"
+          @click="openTable(table.id)">
+          <component :is="table.shape" v-bind="table.shapeProps" :fill="tableColor(table.id)" stroke="#111827"
+            stroke-width="2" />
+          <text x="0" y="4" text-anchor="middle" font-size="12" fill="#0b1220" font-weight="700">
             {{ table.label }}
           </text>
         </g>
-
+        <g class="hall" @click="openRoom" v-if="isRoomReserved">
+          <rect x="0" y="0" width="100%" height="120" fill="url(#hallGradient)" />
+          <text x="50%" y="60" text-anchor="middle" font-size="22" fill="#0b1220" font-weight="700">
+            Аренда
+          </text>
+        </g>
         <defs>
           <linearGradient id="hallGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" :stop-color="isRoomReserved ? '#ef4444' : '#22c55e'" stop-opacity="0.65" />
@@ -64,14 +41,8 @@
       </svg>
     </div>
 
-    <ModalApp
-      v-if="selectedTable"
-      v-model="dialogVisible"
-      :table="selectedTableReservations"
-      :numberTable="selectedTable"
-      @del="delReserve"
-      @creat="creatReserve"
-    />
+    <ModalApp v-if="selectedTable" v-model="dialogVisible" :table="selectedTableReservations"
+      :numberTable="selectedTable" @del="delReserve" @creat="creatReserve" />
   </div>
 </template>
 
@@ -227,36 +198,56 @@ watch(
 <style lang="scss" scoped>
 .plan {
   background: linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
-  border-radius: 12px;
-  padding: 16px;
+  padding: 0 16px;
+  flex: 1;
   color: #e5e7eb;
-  min-height: 520px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
 }
 
 .plan__header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin: 10px;
 }
 
 .plan__title {
   font-size: 20px;
   font-weight: 700;
+  margin: 0;
 }
 
 .plan__subtitle {
+  grid-column: 1/3;
   color: #94a3b8;
-  font-size: 13px;
+  font-size: 10px;
+  margin: 0;
 }
 
 .plan__canvas {
+  max-height: 70vh;
+}
+
+
+.plan__canvas svg {
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+  aspect-ratio: 214 / 325;
+}
+
+.plan__canvas {
+  display: flex;
+  flex-direction: column;
+  justify-items: center;
+  align-items: center;
   position: relative;
   border: 1px solid #1f2937;
   border-radius: 12px;
   overflow: hidden;
-  min-height: 460px;
+  height: auto;
   background: #0b1220;
 }
 

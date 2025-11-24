@@ -9,6 +9,8 @@
         format="DD.MM.YY"
         value-format="DD.MM.YY"
         :clearable="false"
+        :editable="false"
+        style="width: 150px;"
         @change="handleDateChange"
       />
     </div>
@@ -48,9 +50,9 @@ onMounted(() => {
 <style lang="scss" scoped>
 .footer {
   margin-top: auto;
-  background: #0f172a;
+  background: #535353;
   color: #e2e8f0;
-  padding: 16px 24px;
+  padding: 8px 12px 10px;
 }
 
 .footer__inner {
