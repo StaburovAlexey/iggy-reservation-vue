@@ -1,60 +1,74 @@
 <template>
-  <div :id="modalId" class="modal">
-    <ul class="collection with-header list-pull">
-      <li class="collection-item" v-for="res in table" :key="res.id">
-        <span>Время: {{ res.time }}</span
-        ><br />
-        <span>Телефон: {{ res.phone }}</span
-        ><br />
-        <span>Гости: {{ res.name }}</span>
-        <a class="secondary-content" @click="emitDelete(res.id)">
-          <i class="material-icons">delete</i>
-        </a>
-      </li>
-    </ul>
-    <div class="modal-content">
-      <p class="number-table">{{ numberTable }}</p>
-      <div class="row row-modal">
-        <p class="col s6">Время:</p>
-        <div class="input-field col s6">
-          <input class="materialize-textarea" v-model="time" />
-        </div>
+  <el-dialog
+    v-model="visible"
+    :title="`Стол ${numberTable}`"
+    width="520px"
+    destroy-on-close
+  >
+    <div class="dialog-grid">
+      <div class="dialog-grid__left">
+        <div class="dialog-grid__subtitle">Текущие брони</div>
+        <el-empty v-if="!table.length" description="Нет броней" />
+        <el-timeline v-else>
+          <el-timeline-item
+            v-for="res in table"
+            :key="res.id"
+            :timestamp="res.time"
+            placement="top"
+          >
+            <div class="booking-card">
+              <div class="booking-card__name">{{ res.name || "Гость" }}</div>
+              <div class="booking-card__meta">
+                <span>Гостей: {{ res.person || "-" }}</span>
+                <span>Телефон: {{ res.phone || "-" }}</span>
+              </div>
+              <el-button
+                type="danger"
+                text
+                size="small"
+                @click="emitDelete(res.id)"
+              >
+                Удалить
+              </el-button>
+            </div>
+          </el-timeline-item>
+        </el-timeline>
       </div>
-      <div class="row row-modal">
-        <p class="col s6">Количество гостей:</p>
-        <div class="input-field col s6">
-          <textarea class="materialize-textarea" v-model="person"></textarea>
-        </div>
-      </div>
-      <div class="row row-modal">
-        <p class="col s6">Имя:</p>
-        <div class="input-field col s6">
-          <textarea class="materialize-textarea" v-model="name"></textarea>
-        </div>
-      </div>
-      <div class="row row-modal">
-        <p class="col s6">Телефон:</p>
-        <div class="input-field col s6">
-          <textarea class="materialize-textarea" v-model="tel"></textarea>
-        </div>
+      <div class="dialog-grid__right">
+        <div class="dialog-grid__subtitle">Новая бронь</div>
+        <el-form :model="form" label-position="top" class="dialog-form">
+          <el-form-item label="Время">
+            <el-input v-model="form.time" placeholder="Например, 20:00" />
+          </el-form-item>
+          <el-form-item label="Количество гостей">
+            <el-input v-model="form.person" placeholder="Например, 4" />
+          </el-form-item>
+          <el-form-item label="Имя">
+            <el-input v-model="form.name" placeholder="Имя гостя" />
+          </el-form-item>
+          <el-form-item label="Телефон">
+            <el-input v-model="form.tel" placeholder="+7..." />
+          </el-form-item>
+        </el-form>
       </div>
     </div>
-    <div class="modal-footer">
-      <button
-        type="button"
-        class="waves-effect waves-green btn-flat"
-        @click="emitCreate"
-      >
-        Сохранить
-      </button>
-    </div>
-  </div>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="visible = false">Отмена</el-button>
+        <el-button type="primary" @click="emitCreate">Сохранить</el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch, defineProps, defineEmits } from "vue";
+import { computed, defineEmits, defineProps, reactive, watch } from "vue";
 
 const props = defineProps({
+  modelValue: {
+    type: Boolean,
+    default: false,
+  },
   table: {
     type: Array,
     default: () => [],
@@ -65,41 +79,36 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["del", "creat"]);
+const emit = defineEmits(["update:modelValue", "del", "creat"]);
 
-const time = ref("");
-const person = ref("");
-const name = ref("");
-const tel = ref("");
+const form = reactive({
+  time: "",
+  person: "",
+  name: "",
+  tel: "",
+});
 
-const modalId = computed(() => `modal${props.numberTable}`);
+const visible = computed({
+  get: () => props.modelValue,
+  set: (value) => emit("update:modelValue", value),
+});
+
 const numTable = computed(() => String(props.numberTable));
 
 const fillForm = (tableData) => {
   const first = tableData?.[0];
-  time.value = first?.time || "";
-  person.value = first?.person || "";
-  name.value = first?.name || "";
-  tel.value = first?.phone || "";
+  form.time = first?.time || "";
+  form.person = first?.person || "";
+  form.name = first?.name || "";
+  form.tel = first?.phone || "";
 };
 
-const emitCreate = () =>
-  emit("creat", {
-    time: time.value,
-    person: person.value,
-    name: name.value,
-    tel: tel.value,
-    numTable: numTable.value,
-  });
+const emitCreate = () => {
+  emit("creat", { ...form, numTable: numTable.value });
+  visible.value = false;
+};
 
 const emitDelete = (id) => emit("del", { id });
-
-onMounted(() => {
-  const modals = document.querySelectorAll(".modal");
-  if (window.M?.Modal) {
-    window.M.Modal.init(modals);
-  }
-});
 
 watch(
   () => props.table,
@@ -108,4 +117,53 @@ watch(
 );
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.dialog-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  min-height: 320px;
+}
+
+.dialog-grid__left,
+.dialog-grid__right {
+  background: #0f172a;
+  padding: 12px;
+  border-radius: 8px;
+  color: #e5e7eb;
+  border: 1px solid #1f2937;
+}
+
+.dialog-grid__subtitle {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.booking-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.booking-card__name {
+  font-weight: 600;
+  color: #fff;
+}
+
+.booking-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.dialog-form {
+  background: #0f172a;
+}
+
+.dialog-footer {
+  display: inline-flex;
+  gap: 8px;
+}
+</style>
