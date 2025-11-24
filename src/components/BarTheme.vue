@@ -1,16 +1,18 @@
 <template>
   <main v-if="loading" class="main-loader grey darken-3">
-    <PreloaderApp class="big"></PreloaderApp>
+    <PreloaderApp class="big" />
   </main>
   <main v-else class="grey darken-3 main">
-    <h3 class="rent-main red-text center" v-if="tables.room">Аренда!!!</h3>
+    <h3 class="rent-main red-text center" v-if="tables.room.length">
+      Зал уже забронирован!
+    </h3>
     <div class="row">
       <div
         class="col s2 offset-s5 center modal-trigger"
         data-target="modal8"
         :class="{
-          green: tables.table_8 === false,
-          red: tables.table_8,
+          green: !tables.table_8.length,
+          red: tables.table_8.length,
         }"
       >
         8
@@ -21,8 +23,8 @@
         class="col s2 offset-s1 center modal-trigger"
         data-target="modal11"
         :class="{
-          green: tables.pull === false,
-          red: tables.pull,
+          green: !tables.pull.length,
+          red: tables.pull.length,
         }"
       >
         Pull
@@ -32,8 +34,8 @@
         class="col s2 offset-s7 center modal-trigger"
         data-target="modal9"
         :class="{
-          green: tables.table_9 === false,
-          red: tables.table_9,
+          green: !tables.table_9.length,
+          red: tables.table_9.length,
         }"
       >
         9
@@ -44,8 +46,8 @@
         class="col s2 offset-s5 center modal-trigger"
         data-target="modal10"
         :class="{
-          green: tables.table_10 === false,
-          red: tables.table_10,
+          green: !tables.table_10.length,
+          red: tables.table_10.length,
         }"
       >
         10
@@ -58,8 +60,8 @@
         class="col s3 center modal-trigger"
         data-target="modal1"
         :class="{
-          green: tables.table_1 === false,
-          red: tables.table_1,
+          green: !tables.table_1.length,
+          red: tables.table_1.length,
         }"
       >
         1
@@ -68,8 +70,8 @@
         class="col s2 offset-s7 center circle modal-trigger"
         data-target="modal2"
         :class="{
-          green: tables.table_2 === false,
-          red: tables.table_2,
+          green: !tables.table_2.length,
+          red: tables.table_2.length,
         }"
       >
         2
@@ -81,8 +83,8 @@
         class="col s3 center modal-trigger"
         data-target="modal3"
         :class="{
-          green: tables.table_3 === false,
-          red: tables.table_3,
+          green: !tables.table_3.length,
+          red: tables.table_3.length,
         }"
       >
         3
@@ -91,8 +93,8 @@
         class="col s2 offset-s1 center circle modal-trigger"
         data-target="modal4"
         :class="{
-          green: tables.table_4 === false,
-          red: tables.table_4,
+          green: !tables.table_4.length,
+          red: tables.table_4.length,
         }"
       >
         4
@@ -101,8 +103,8 @@
         class="col s4 center modal-trigger"
         data-target="modal5"
         :class="{
-          green: tables.table_5 === false,
-          red: tables.table_5,
+          green: !tables.table_5.length,
+          red: tables.table_5.length,
         }"
       >
         5
@@ -111,8 +113,8 @@
         class="col s2 center circle modal-trigger"
         data-target="modal6"
         :class="{
-          green: tables.table_6 === false,
-          red: tables.table_6,
+          green: !tables.table_6.length,
+          red: tables.table_6.length,
         }"
       >
         6
@@ -124,144 +126,148 @@
         class="col s2 center circle modal-trigger"
         data-target="modal7"
         :class="{
-          green: tables.table_7 === false,
-          red: tables.table_7,
+          green: !tables.table_7.length,
+          red: tables.table_7.length,
         }"
       >
         7
       </div>
     </div>
     <ModalApp
-      v-for="(table, name, index) in tables"
-      :key="index"
-      :table="table"
-      :numberTable="index + 1"
+      v-for="table in tablesList"
+      :key="table.key"
+      :table="table.items"
+      :numberTable="table.number"
       @del="delReserve"
       @creat="creatReserve"
-    >
-    </ModalApp>
+    />
   </main>
 </template>
 
-<script>
+<script setup>
+import { computed, reactive, ref, watch } from "vue";
+import { useStore } from "vuex";
 import ModalApp from "./ModalApp.vue";
 import PreloaderApp from "./PreloaderApp.vue";
 import { sendPushMessage } from "@/telegram/telegramSendMessage";
-export default {
-  data() {
-    return {
-      reserve: {},
-      tables: {
-        table_1: {},
-        table_2: {},
-        table_3: {},
-        table_4: {},
-        table_5: {},
-        table_6: {},
-        table_7: {},
-        table_8: {},
-        table_9: {},
-        table_10: {},
-        pull: {},
-        room: {},
-      },
-      loading: false,
-    };
-  },
-  computed: {
-    date() {
-      return this.$store.getters.date;
-    },
-  },
-  methods: {
-    async open() {
-      try {
-        this.loading = true;
-        const day = await this.$store.dispatch("fetchInfo");
-        this.reserve = day;
-        this.loading = false;
-      } catch (error) {
-        console.log(error);
-        this.loading = false;
-      }
 
-      // console.log(day)
-    },
-    async findReserveByTable(table) {
-      const reserve = this.reserve.filter((item) => item.table === table);
-      if (reserve.length) {
-        console.log("res", reserve);
-        return reserve;
-      } else {
-        // console.log('не нашел стол', reserve);
-        return false;
-      }
-    },
-    async findPullReserve(table) {
-      const reserve = this.reserve.filter((item) => item.table === table);
-      if (reserve) {
-        return reserve;
-      } else {
-        // console.log('не нашел стол', reserve);
-        return false;
-      }
-    },
-    async delReserve(id) {
-      // console.log("delreserve", id.id);
-      this.loading = true;
-      const status = await this.$store.dispatch("delInfo", { id: id.id });
-      if (status == "204") {
-        await this.open();
-        alert("Запись удалена");
-        this.loading = false;
-      } else {
-        alert(status);
-        this.loading = false;
-      }
-    },
-    async creatReserve(data) {
-      if (data.time !== undefined && data.person !== undefined) {
-        this.loading = true;
-        const status = await this.$store.dispatch("creatInfo", { data });
-        if (status == "201") {
-          await this.open();
-          alert("Запись добавлена");
-          sendPushMessage(data, this.date);
-          this.loading = false;
-        } else {
-          alert(status);
-          this.loading = false;
-        }
-      } else {
-        alert("Обязательно введи время и количество человек!");
-      }
-    },
-  },
-  mounted() {
-    // M.AutoInit();
-  },
-  watch: {
-    date() {
-      this.open();
-    },
-    async reserve() {
-      this.tables.table_1 = await this.findReserveByTable("1");
-      this.tables.table_2 = await this.findReserveByTable("2");
-      this.tables.table_3 = await this.findReserveByTable("3");
-      this.tables.table_4 = await this.findReserveByTable("4");
-      this.tables.table_5 = await this.findReserveByTable("5");
-      this.tables.table_6 = await this.findReserveByTable("6");
-      this.tables.table_7 = await this.findReserveByTable("7");
-      this.tables.table_8 = await this.findReserveByTable("8");
-      this.tables.table_9 = await this.findReserveByTable("9");
-      this.tables.table_10 = await this.findReserveByTable("10");
-      this.tables.pull = await this.findReserveByTable("11");
-      // this.tables.pull = await this.findPullReserve("11");
-      this.tables.room = await this.findReserveByTable("12");
-    },
-  },
-  components: { ModalApp, PreloaderApp },
+const store = useStore();
+const loading = ref(false);
+const reservations = ref([]);
+
+const date = computed(() => store.getters.date);
+const storeReservations = computed(() => store.getters.reservation || []);
+
+const tables = reactive({
+  table_1: [],
+  table_2: [],
+  table_3: [],
+  table_4: [],
+  table_5: [],
+  table_6: [],
+  table_7: [],
+  table_8: [],
+  table_9: [],
+  table_10: [],
+  pull: [],
+  room: [],
+});
+
+const tablesList = computed(() => [
+  { key: "table_1", number: 1, items: tables.table_1 },
+  { key: "table_2", number: 2, items: tables.table_2 },
+  { key: "table_3", number: 3, items: tables.table_3 },
+  { key: "table_4", number: 4, items: tables.table_4 },
+  { key: "table_5", number: 5, items: tables.table_5 },
+  { key: "table_6", number: 6, items: tables.table_6 },
+  { key: "table_7", number: 7, items: tables.table_7 },
+  { key: "table_8", number: 8, items: tables.table_8 },
+  { key: "table_9", number: 9, items: tables.table_9 },
+  { key: "table_10", number: 10, items: tables.table_10 },
+  { key: "pull", number: 11, items: tables.pull },
+  { key: "room", number: 12, items: tables.room },
+]);
+
+const filterByTable = (tableId) =>
+  reservations.value.filter((item) => item.table === tableId);
+
+const populateTables = () => {
+  tables.table_1 = filterByTable("1");
+  tables.table_2 = filterByTable("2");
+  tables.table_3 = filterByTable("3");
+  tables.table_4 = filterByTable("4");
+  tables.table_5 = filterByTable("5");
+  tables.table_6 = filterByTable("6");
+  tables.table_7 = filterByTable("7");
+  tables.table_8 = filterByTable("8");
+  tables.table_9 = filterByTable("9");
+  tables.table_10 = filterByTable("10");
+  tables.pull = filterByTable("11");
+  tables.room = filterByTable("12");
 };
+
+const fetchReservations = async () => {
+  if (!date.value) return;
+  loading.value = true;
+  try {
+    const data = await store.dispatch("fetchInfo");
+    reservations.value = data || [];
+  } catch (error) {
+    console.log(error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const delReserve = async ({ id }) => {
+  if (!id) return;
+  loading.value = true;
+  try {
+    const status = await store.dispatch("delInfo", { id });
+    if (status === 204 || status === "204") {
+      await fetchReservations();
+      alert("Бронь удалена");
+    } else {
+      alert(status);
+    }
+  } finally {
+    loading.value = false;
+  }
+};
+
+const creatReserve = async (data) => {
+  if (!data.time || !data.person) {
+    alert("Укажите время и количество гостей");
+    return;
+  }
+  loading.value = true;
+  try {
+    const status = await store.dispatch("creatInfo", { data });
+    if (status === 201 || status === "201") {
+      await fetchReservations();
+      alert("Бронь создана");
+      sendPushMessage(data, date.value).catch((error) => console.log(error));
+    } else {
+      alert(status);
+    }
+  } finally {
+    loading.value = false;
+  }
+};
+
+watch(date, () => fetchReservations(), { immediate: true });
+watch(
+  reservations,
+  () => populateTables(),
+  { immediate: true, deep: true }
+);
+watch(
+  storeReservations,
+  (value) => {
+    reservations.value = value;
+  },
+  { immediate: true, deep: true }
+);
 </script>
 
 <style lang="scss" scoped></style>
