@@ -15,7 +15,7 @@
         <label for="password">Пароль</label>
       </div>
       <div class="center">
-        <PreloaderApp v-if="loading"></PreloaderApp>
+        <PreloaderApp v-if="loading" />
         <button
           v-else
           class="btn waves-effect waves-light center"
@@ -31,44 +31,32 @@
   </form>
 </template>
 
-<script>
+<script setup>
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
+import { useStore } from "vuex";
 import PreloaderApp from "@/components/PreloaderApp.vue";
 
-export default {
-  data() {
-    return {
-      email: "",
-      pass: "",
-      loading: false,
-    };
-  },
-  methods: {
-    async submit() {
-      this.loading = true;
-      const formData = {
-        email: this.email,
-        pass: this.pass,
-      };
-      try {
-        await this.$store.dispatch("login", formData);
-        this.$router.push("/");
-        this.loading = false;
-      } catch (e) {
-        alert(e);
-        console.log(e);
-        this.loading = false;
-      }
-    },
-  },
-  computed: {
-    disabled() {
-      if (!this.email || !this.pass) {
-        return true;
-      }
-      return false;
-    },
-  },
-  components: { PreloaderApp },
+const store = useStore();
+const router = useRouter();
+
+const email = ref("");
+const pass = ref("");
+const loading = ref(false);
+
+const disabled = computed(() => !email.value || !pass.value);
+
+const submit = async () => {
+  loading.value = true;
+  try {
+    await store.dispatch("login", { email: email.value, pass: pass.value });
+    router.push("/");
+  } catch (error) {
+    alert(error);
+    console.log(error);
+  } finally {
+    loading.value = false;
+  }
 };
 </script>
 
