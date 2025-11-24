@@ -143,11 +143,11 @@ watch(
 
 .dialog-grid__left,
 .dialog-grid__right {
-  background: #0f172a;
+  background: var(--bg-surface);
   padding: 12px;
   border-radius: 8px;
-  color: #e5e7eb;
-  border: 1px solid #1f2937;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
 }
 
 .dialog-grid__subtitle {
@@ -163,7 +163,7 @@ watch(
 
 .booking-card__name {
   font-weight: 600;
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .booking-card__meta {
@@ -171,11 +171,11 @@ watch(
   flex-direction: column;
   gap: 2px;
   font-size: 12px;
-  color: #cbd5e1;
+  color: var(--text-secondary);
 }
 
 .dialog-form {
-  background: #0f172a;
+  background: var(--bg-surface);
 }
 
 .dialog-footer {

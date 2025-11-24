@@ -1,10 +1,38 @@
+:root {
+  --bg-surface: #0f172a;
+  --bg-surface-2: #0b1220;
+  --bg-navbar: #535353;
+  --text-primary: #e5e7eb;
+  --text-secondary: #94a3b8;
+  --border-color: #1f2937;
+  --gradient-start: #0f172a;
+  --gradient-end: #0b1220;
+  --canvas-bg: #0b1220;
+}
+
+:root.theme-light {
+  --bg-surface: #f8fafc;
+  --bg-surface-2: #ffffff;
+  --bg-navbar: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --border-color: #cbd5e1;
+  --gradient-start: #f8fafc;
+  --gradient-end: #e2e8f0;
+  --canvas-bg: #ffffff;
+}
+
 html {
   min-height: 100svh;
+  background: var(--bg-surface);
+  color: var(--text-primary);
 }
 #app {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: var(--bg-surface);
+  color: var(--text-primary);
 }
 .main {
   width: 100%;

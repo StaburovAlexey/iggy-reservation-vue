@@ -19,8 +19,8 @@
         preserveAspectRatio="xMidYMid meet"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <rect x="0" y="0" width="100%" fill="#0b1220" />
-        <line x1="0" y1="120" x2="100%" y2="120" stroke="#1f2937" stroke-width="2" />
+        <rect x="0" y="0" width="100%" fill="var(--canvas-bg)" />
+        <line x1="0" y1="120" x2="100%" y2="120" stroke="var(--border-color)" stroke-width="2" />
 
         <!-- Зал (12) -->
         <g class="hall" @click="openRoom" v-if="!isRoomReserved">
@@ -222,10 +222,10 @@ watch(
 
 <style lang="scss" scoped>
 .plan {
-  background: linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+  background: linear-gradient(180deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
   padding: 0 16px;
   flex: 1;
-  color: #e5e7eb;
+  color: var(--text-primary);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
 }
 
@@ -250,7 +250,7 @@ watch(
 
 .plan__subtitle {
   grid-column: 1/3;
-  color: #94a3b8;
+  color: var(--text-secondary);
   font-size: 10px;
   margin: 0;
 }
@@ -272,11 +272,11 @@ watch(
   justify-items: center;
   align-items: center;
   position: relative;
-  border: 1px solid #1f2937;
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   overflow: hidden;
   height: auto;
-  background: #0b1220;
+  background: var(--canvas-bg);
 }
 
 svg {

@@ -50,8 +50,8 @@ onMounted(() => {
 <style lang="scss" scoped>
 .footer {
   margin-top: auto;
-  background: #535353;
-  color: #e2e8f0;
+  background: var(--bg-navbar);
+  color: var(--text-primary);
   padding: 8px 12px 10px;
 }
 

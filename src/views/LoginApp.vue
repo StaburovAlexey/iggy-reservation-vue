@@ -71,15 +71,15 @@ const submit = async () => {
   justify-content: center;
   min-height: 100vh;
   width: 100%;
-  background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+  background: linear-gradient(180deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
 }
 
 .auth__card {
   width: 100%;
   max-width: 400px;
-  background: #0b1220;
-  color: #e5e7eb;
-  border: 1px solid #1f2937;
+  background: var(--bg-surface-2);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
 }
 
 .auth__logo {

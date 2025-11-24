@@ -4,16 +4,81 @@
       <div class="logo" />
       <span class="navbar__title">IGGY Reservation</span>
     </div>
+    <el-dropdown trigger="click">
+      <div class="navbar__menu-btn">
+        <el-avatar :size="36" :src="avatarUrl" class="navbar__avatar">{{ avatarFallback }}</el-avatar>
+        <span class="navbar__name">{{ userName }}</span>
+        <el-icon><ArrowDown /></el-icon>
+      </div>
+      <template #dropdown>
+        <el-dropdown-menu class="navbar__dropdown">
+          <el-dropdown-item class="navbar__user">
+            <el-avatar :size="40" :src="avatarUrl" class="navbar__avatar">{{ avatarFallback }}</el-avatar>
+            <div class="navbar__user-info">
+              <div class="navbar__user-name">{{ userName }}</div>
+              <div class="navbar__user-mail">{{ userEmail }}</div>
+            </div>
+          </el-dropdown-item>
+          <el-dropdown-item divided @click="editProfile">
+            Редактировать профиль
+          </el-dropdown-item>
+          <el-dropdown-item @click="toggleTheme">
+            Сменить тему: {{ nextThemeLabel }}
+          </el-dropdown-item>
+        </el-dropdown-menu>
+      </template>
+    </el-dropdown>
   </header>
 </template>
 
 <script setup>
+import { computed, ref, watch } from "vue";
 import { useStore } from "vuex";
+import { ArrowDown } from "@element-plus/icons-vue";
 
 const store = useStore();
+const THEME_KEY = "iggy-theme";
+const theme = ref(localStorage.getItem(THEME_KEY) || "dark");
+
+const user = computed(() => store.getters.user || {});
+const userName = computed(
+  () => user.value.user_metadata?.full_name || user.value.email || "Пользователь"
+);
+const userEmail = computed(() => user.value.email || "Нет e-mail");
+const avatarUrl = computed(() => user.value.user_metadata?.avatar_url || "");
+const avatarFallback = computed(() =>
+  userName.value ? userName.value.slice(0, 1).toUpperCase() : "U"
+);
+
+const applyTheme = (value) => {
+  const root = document.documentElement;
+  root.classList.remove("theme-light", "theme-dark");
+  const normalized = value === "light" ? "light" : "dark";
+  root.classList.add(`theme-${normalized}`);
+  localStorage.setItem(THEME_KEY, normalized);
+};
+
+watch(
+  theme,
+  (value) => applyTheme(value),
+  { immediate: true }
+);
+
+const nextThemeLabel = computed(() =>
+  theme.value === "light" ? "Тёмная" : "Светлая"
+);
 
 const refresh = () => {
   store.dispatch("fetchInfo").catch((error) => console.log(error));
+};
+
+const toggleTheme = () => {
+  theme.value = theme.value === "light" ? "dark" : "light";
+};
+
+const editProfile = () => {
+  // Заглушка: здесь может быть переход на страницу профиля
+  console.log("Открыть профиль");
 };
 </script>
 
@@ -22,8 +87,8 @@ const refresh = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #535353;
-  color: #e5e7eb;
+  background: var(--bg-navbar);
+  color: var(--text-primary);
   padding: 6px 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
@@ -47,5 +112,50 @@ const refresh = () => {
   background-size: contain;
   width: 40px;
   height: 40px;
+}
+
+.navbar__menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.navbar__avatar {
+  margin-right: 10px;
+  background: var(--bg-surface-2);
+  color: var(--text-primary);
+}
+
+.navbar__name {
+  font-weight: 600;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.navbar__dropdown {
+  min-width: 220px;
+}
+
+.navbar__user {
+  gap: 8px;
+  cursor: default;
+}
+
+.navbar__user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar__user-name {
+  font-weight: 700;
+}
+
+.navbar__user-mail {
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 </style>
