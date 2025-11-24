@@ -2,7 +2,11 @@
   <header>
     <nav>
       <div class="nav-wrapper indigo darken-3">
-        <a href="#!" class="brand-logo left logo white" @click.prevent="refresh" />
+        <a
+          href="#!"
+          class="brand-logo left logo white"
+          @click.prevent="refresh"
+        />
         <button
           class="btn right btn-nav modal-trigger"
           data-target="modal12"

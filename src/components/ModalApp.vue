@@ -2,8 +2,10 @@
   <div :id="modalId" class="modal">
     <ul class="collection with-header list-pull">
       <li class="collection-item" v-for="res in table" :key="res.id">
-        <span>Время: {{ res.time }}</span><br />
-        <span>Телефон: {{ res.phone }}</span><br />
+        <span>Время: {{ res.time }}</span
+        ><br />
+        <span>Телефон: {{ res.phone }}</span
+        ><br />
         <span>Гости: {{ res.name }}</span>
         <a class="secondary-content" @click="emitDelete(res.id)">
           <i class="material-icons">delete</i>
@@ -50,7 +52,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch, defineProps, defineEmits } from "vue";
 
 const props = defineProps({
   table: {

@@ -8,11 +8,10 @@ export async function sendPushMessage(data, date) {
     return;
   }
 
-  const text = `Новая бронь.\n Стол ${data.numTable || "-"}, гость ${
-    data.name || "-"
-  } на ${data.time || "-"} (${date || "-"})\nГостей: ${
-    data.person || "-"
-  }\nТелефон: ${data.tel || "-"}`;
+  const text = `Новая бронь на ${data.time || "-"} (${date || "-"})\n
+  Имя ${data.name || "-"}
+  Гостей: ${data.person || "-"}
+  Телефон: ${data.tel || "-"}`;
 
   try {
     await fetch(API, {

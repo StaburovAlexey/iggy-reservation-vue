@@ -3,136 +3,132 @@
     <PreloaderApp class="big" />
   </main>
   <main v-else class="grey darken-3 main">
-    <h3 class="rent-main red-text center" v-if="tables.room.length">
-      Зал уже забронирован!
-    </h3>
-    <div class="row">
-      <div
-        class="col s2 offset-s5 center modal-trigger"
-        data-target="modal8"
-        :class="{
-          green: !tables.table_8.length,
-          red: tables.table_8.length,
-        }"
-      >
-        8
-      </div>
-    </div>
-    <div class="row pull">
-      <div
-        class="col s2 offset-s1 center modal-trigger"
-        data-target="modal11"
-        :class="{
-          green: !tables.pull.length,
-          red: tables.pull.length,
-        }"
-      >
-        Pull
-      </div>
+    <svg
+      width="100%"
+      height="100%"
+      viewBox="0 0 214 325"
+      preserveAspectRatio="xMidYMid meet"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <!-- фон -->
+      <rect x="0" y="0" width="100%" height="100%" fill="#3f3f3f" />
 
-      <div
-        class="col s2 offset-s7 center modal-trigger"
-        data-target="modal9"
-        :class="{
-          green: !tables.table_9.length,
-          red: tables.table_9.length,
-        }"
-      >
-        9
-      </div>
-    </div>
-    <div class="row">
-      <div
-        class="col s2 offset-s5 center modal-trigger"
-        data-target="modal10"
-        :class="{
-          green: !tables.table_10.length,
-          red: tables.table_10.length,
-        }"
-      >
-        10
-      </div>
-    </div>
-    <div class="divider"></div>
+      <!-- линия между 1 и 2 -->
+      <line
+        x1="0"
+        y1="120"
+        x2="100%"
+        y2="120"
+        stroke="#bfbfbf"
+        stroke-width="2"
+      />
 
-    <div class="row">
-      <div
-        class="col s3 center modal-trigger"
-        data-target="modal1"
-        :class="{
-          green: !tables.table_1.length,
-          red: tables.table_1.length,
-        }"
-      >
-        1
-      </div>
-      <div
-        class="col s2 offset-s7 center circle modal-trigger"
-        data-target="modal2"
-        :class="{
-          green: !tables.table_2.length,
-          red: tables.table_2.length,
-        }"
-      >
-        2
-      </div>
-    </div>
-    <div class="row"></div>
-    <div class="row">
-      <div
-        class="col s3 center modal-trigger"
-        data-target="modal3"
-        :class="{
-          green: !tables.table_3.length,
-          red: tables.table_3.length,
-        }"
-      >
-        3
-      </div>
-      <div
-        class="col s2 offset-s1 center circle modal-trigger"
-        data-target="modal4"
-        :class="{
-          green: !tables.table_4.length,
-          red: tables.table_4.length,
-        }"
-      >
-        4
-      </div>
-      <div
-        class="col s4 center modal-trigger"
-        data-target="modal5"
-        :class="{
-          green: !tables.table_5.length,
-          red: tables.table_5.length,
-        }"
-      >
-        5
-      </div>
-      <div
-        class="col s2 center circle modal-trigger"
-        data-target="modal6"
-        :class="{
-          green: !tables.table_6.length,
-          red: tables.table_6.length,
-        }"
-      >
-        6
-      </div>
-    </div>
-    <div class="row"></div>
-    <div class="row">
-      <div
-        class="col s2 center circle modal-trigger"
-        data-target="modal7"
-        :class="{
-          green: !tables.table_7.length,
-          red: tables.table_7.length,
-        }"
-      >
-        7
-      </div>
-    </div>
+      <g id="pull" transform="translate(35,60)">
+        <rect x="-20" y="-15" width="40" height="30" fill="#31c550" />
+        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
+          pull
+        </text>
+      </g>
+      <!-- 8 -->
+      <g id="8" transform="translate(107,40)">
+        <rect x="-20" y="-15" width="40" height="30" fill="#31c550" />
+        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
+          8
+        </text>
+      </g>
+
+      <!-- 9 -->
+      <g id="9" transform="translate(170,60)">
+        <rect x="-20" y="-15" width="40" height="30" fill="#31c550" />
+        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
+          9
+        </text>
+      </g>
+
+      <!-- 10 -->
+      <g id="10" transform="translate(107,90)">
+        <rect x="-20" y="-15" width="40" height="30" fill="#31c550" />
+        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
+          10
+        </text>
+      </g>
+
+      <!-- 1 -->
+      <g id="1" transform="translate(35,140)">
+        <rect x="-30" y="-15" width="60" height="30" fill="#31c550" />
+        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
+          1
+        </text>
+      </g>
+
+      <!-- 2 -->
+      <g id="2" transform="translate(190,140)">
+        <circle r="16" fill="#31c550" />
+        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
+          2
+        </text>
+      </g>
+
+      <!-- 3 -->
+      <g id="3" transform="translate(35,210)">
+        <rect x="-30" y="-15" width="60" height="30" fill="#31c550" />
+        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
+          3
+        </text>
+      </g>
+
+      <!-- 4 -->
+      <g id="4" transform="translate(90,210)">
+        <circle r="16" fill="#31c550" />
+        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
+          4
+        </text>
+      </g>
+
+      <!-- 5 -->
+      <g id="5" transform="translate(140,210)">
+        <rect x="-30" y="-15" width="60" height="30" fill="#31c550" />
+        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
+          5
+        </text>
+      </g>
+
+      <!-- 6 -->
+      <g id="6" transform="translate(190,210)">
+        <circle r="16" fill="#31c550" />
+        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
+          6
+        </text>
+      </g>
+
+      <!-- 7 -->
+      <g id="7" transform="translate(35,280)">
+        <circle r="16" fill="#31c550" />
+        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
+          7
+        </text>
+      </g>
+
+      <g id="rent" transform="translate(0,0)">
+        <rect id="rent-rect" x="" y="0" width="100%" height="120" />
+        <text
+          x="50%"
+          y="60"
+          text-anchor="middle"
+          font-size="26"
+          fill="#FF2400"
+          style=""
+        >
+          Аренда!
+        </text>
+      </g>
+      <style>
+        #rent-rect {
+          fill: #000;
+          opacity: 0.5;
+        }
+      </style>
+    </svg>
     <ModalApp
       v-for="table in tablesList"
       :key="table.key"
@@ -256,11 +252,7 @@ const creatReserve = async (data) => {
 };
 
 watch(date, () => fetchReservations(), { immediate: true });
-watch(
-  reservations,
-  () => populateTables(),
-  { immediate: true, deep: true }
-);
+watch(reservations, () => populateTables(), { immediate: true, deep: true });
 watch(
   storeReservations,
   (value) => {
