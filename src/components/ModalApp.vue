@@ -2,14 +2,14 @@
   <el-dialog
     v-model="visible"
     :title="`Стол ${numberTable}`"
-    width="520px"
+    width="min(520px, 95vw)"
     destroy-on-close
   >
     <div class="dialog-grid">
       <div class="dialog-grid__left">
         <div class="dialog-grid__subtitle">Текущие брони</div>
-        <el-empty v-if="!table.length" description="Нет броней" />
-        <el-timeline v-else>
+        <!-- <el-empty v-if="!table.length" description="Нет броней" /> -->
+        <el-timeline>
           <el-timeline-item
             v-for="res in table"
             :key="res.id"
@@ -24,8 +24,9 @@
               </div>
               <el-button
                 type="danger"
-                text
                 size="small"
+                :loading="deletingId === res.id"
+                :disabled="deletingId === res.id"
                 @click="emitDelete(res.id)"
               >
                 Удалить
@@ -62,7 +63,7 @@
 </template>
 
 <script setup>
-import { computed, defineEmits, defineProps, reactive, watch } from "vue";
+import { computed, defineEmits, defineProps, reactive, ref, watch } from "vue";
 
 const props = defineProps({
   modelValue: {
@@ -88,6 +89,8 @@ const form = reactive({
   tel: "",
 });
 
+const deletingId = ref(null);
+
 const visible = computed({
   get: () => props.modelValue,
   set: (value) => emit("update:modelValue", value),
@@ -108,12 +111,25 @@ const emitCreate = () => {
   visible.value = false;
 };
 
-const emitDelete = (id) => emit("del", { id });
+const emitDelete = (id) => {
+  deletingId.value = id;
+  emit("del", { id });
+};
 
 watch(
   () => props.table,
-  (value) => fillForm(value),
+  (value) => {
+    fillForm(value);
+    deletingId.value = null;
+  },
   { deep: true, immediate: true }
+);
+
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (!isOpen) deletingId.value = null;
+  }
 );
 </script>
 
@@ -165,5 +181,27 @@ watch(
 .dialog-footer {
   display: inline-flex;
   gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .dialog-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dialog-grid__left,
+  .dialog-grid__right {
+    padding: 10px;
+  }
+
+  :deep(.el-dialog__header),
+  :deep(.el-dialog__body) {
+    padding: 12px;
+  }
+
+  .dialog-footer {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
 }
 </style>

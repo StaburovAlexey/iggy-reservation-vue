@@ -6,7 +6,11 @@
       </div>
       <el-form :model="form" label-position="top" @submit.prevent>
         <el-form-item label="Ваш e-mail">
-          <el-input v-model="form.email" type="email" placeholder="you@example.com" />
+          <el-input
+            v-model="form.email"
+            type="email"
+            placeholder="you@example.com"
+          />
         </el-form-item>
         <el-form-item label="Пароль">
           <el-input v-model="form.pass" type="password" show-password />
@@ -66,6 +70,7 @@ const submit = async () => {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  width: 100%;
   background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
 }
 

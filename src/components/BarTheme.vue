@@ -158,9 +158,9 @@ const creatReserve = async (data) => {
     if (status === 201 || status === "201") {
       await fetchReservations();
       ElMessage.success("Бронь создана");
-      sendPushMessage({ ...data, numTable: targetTable }, date.value).catch(
-        (error) => console.log(error)
-      );
+      // sendPushMessage({ ...data, numTable: targetTable }, date.value).catch(
+      //   (error) => console.log(error)
+      // );
     } else {
       ElMessage.error(status);
     }
@@ -261,10 +261,10 @@ svg {
   transition: transform 0.2s ease, filter 0.2s ease;
 }
 
-.table-node:hover {
-  transform: scale(1.05);
-  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.35));
-}
+// .table-node:hover {
+//   transform: scale(1.05);
+//   filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.35));
+// }
 
 .hall {
   cursor: pointer;
