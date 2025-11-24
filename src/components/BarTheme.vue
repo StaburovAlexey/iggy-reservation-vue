@@ -1,154 +1,91 @@
 <template>
-  <main v-if="loading" class="main-loader grey darken-3">
-    <PreloaderApp class="big" />
-  </main>
-  <main v-else class="grey darken-3 main">
-    <svg
-      width="100%"
-      height="100%"
-      viewBox="0 0 214 325"
-      preserveAspectRatio="xMidYMid meet"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <!-- фон -->
-      <rect x="0" y="0" width="100%" height="100%" fill="#3f3f3f" />
+  <div class="plan" v-loading="loading">
+    <div class="plan__header">
+      <div>
+        <p class="plan__title">План зала</p>
+        <p class="plan__subtitle">Нажмите на стол, чтобы открыть бронь</p>
+      </div>
+      <el-tag :type="isRoomReserved ? 'danger' : 'success'" effect="dark">
+        {{ isRoomReserved ? "Зал занят" : "Зал свободен" }}
+      </el-tag>
+    </div>
 
-      <!-- линия между 1 и 2 -->
-      <line
-        x1="0"
-        y1="120"
-        x2="100%"
-        y2="120"
-        stroke="#bfbfbf"
-        stroke-width="2"
-      />
+    <div class="plan__canvas">
+      <svg
+        width="100%"
+        height="100%"
+        viewBox="0 0 214 325"
+        preserveAspectRatio="xMidYMid meet"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <rect x="0" y="0" width="100%" height="100%" fill="#0b1220" />
+        <line x1="0" y1="120" x2="100%" y2="120" stroke="#1f2937" stroke-width="2" />
 
-      <g id="pull" transform="translate(35,60)">
-        <rect x="-20" y="-15" width="40" height="30" fill="#31c550" />
-        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
-          pull
-        </text>
-      </g>
-      <!-- 8 -->
-      <g id="8" transform="translate(107,40)">
-        <rect x="-20" y="-15" width="40" height="30" fill="#31c550" />
-        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
-          8
-        </text>
-      </g>
+        <!-- Зал (12) -->
+        <g class="hall" @click="openRoom">
+          <rect x="0" y="0" width="100%" height="120" fill="url(#hallGradient)" />
+          <text x="50%" y="60" text-anchor="middle" font-size="22" fill="#0b1220" font-weight="700">
+            Зал
+          </text>
+        </g>
 
-      <!-- 9 -->
-      <g id="9" transform="translate(170,60)">
-        <rect x="-20" y="-15" width="40" height="30" fill="#31c550" />
-        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
-          9
-        </text>
-      </g>
-
-      <!-- 10 -->
-      <g id="10" transform="translate(107,90)">
-        <rect x="-20" y="-15" width="40" height="30" fill="#31c550" />
-        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
-          10
-        </text>
-      </g>
-
-      <!-- 1 -->
-      <g id="1" transform="translate(35,140)">
-        <rect x="-30" y="-15" width="60" height="30" fill="#31c550" />
-        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
-          1
-        </text>
-      </g>
-
-      <!-- 2 -->
-      <g id="2" transform="translate(190,140)">
-        <circle r="16" fill="#31c550" />
-        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
-          2
-        </text>
-      </g>
-
-      <!-- 3 -->
-      <g id="3" transform="translate(35,210)">
-        <rect x="-30" y="-15" width="60" height="30" fill="#31c550" />
-        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
-          3
-        </text>
-      </g>
-
-      <!-- 4 -->
-      <g id="4" transform="translate(90,210)">
-        <circle r="16" fill="#31c550" />
-        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
-          4
-        </text>
-      </g>
-
-      <!-- 5 -->
-      <g id="5" transform="translate(140,210)">
-        <rect x="-30" y="-15" width="60" height="30" fill="#31c550" />
-        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
-          5
-        </text>
-      </g>
-
-      <!-- 6 -->
-      <g id="6" transform="translate(190,210)">
-        <circle r="16" fill="#31c550" />
-        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
-          6
-        </text>
-      </g>
-
-      <!-- 7 -->
-      <g id="7" transform="translate(35,280)">
-        <circle r="16" fill="#31c550" />
-        <text x="0" y="4" text-anchor="middle" font-size="12" fill="#000">
-          7
-        </text>
-      </g>
-
-      <g id="rent" transform="translate(0,0)">
-        <rect id="rent-rect" x="" y="0" width="100%" height="120" />
-        <text
-          x="50%"
-          y="60"
-          text-anchor="middle"
-          font-size="26"
-          fill="#FF2400"
-          style=""
+        <g
+          v-for="table in svgTables"
+          :key="table.id"
+          :transform="table.transform"
+          class="table-node"
+          @click="openTable(table.id)"
         >
-          Аренда!
-        </text>
-      </g>
-      <style>
-        #rent-rect {
-          fill: #000;
-          opacity: 0.5;
-        }
-      </style>
-    </svg>
+          <component
+            :is="table.shape"
+            v-bind="table.shapeProps"
+            :fill="tableColor(table.id)"
+            stroke="#111827"
+            stroke-width="2"
+          />
+          <text
+            x="0"
+            y="4"
+            text-anchor="middle"
+            font-size="12"
+            fill="#0b1220"
+            font-weight="700"
+          >
+            {{ table.label }}
+          </text>
+        </g>
+
+        <defs>
+          <linearGradient id="hallGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" :stop-color="isRoomReserved ? '#ef4444' : '#22c55e'" stop-opacity="0.65" />
+            <stop offset="100%" stop-color="#0b1220" stop-opacity="0.6" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+
     <ModalApp
-      v-for="table in tablesList"
-      :key="table.key"
-      :table="table.items"
-      :numberTable="table.number"
+      v-if="selectedTable"
+      v-model="dialogVisible"
+      :table="selectedTableReservations"
+      :numberTable="selectedTable"
       @del="delReserve"
       @creat="creatReserve"
     />
-  </main>
+  </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from "vue";
+import { computed, reactive, ref, watch, defineExpose } from "vue";
 import { useStore } from "vuex";
+import { ElMessage } from "element-plus";
 import ModalApp from "./ModalApp.vue";
-import PreloaderApp from "./PreloaderApp.vue";
 import { sendPushMessage } from "@/telegram/telegramSendMessage";
 
 const store = useStore();
 const loading = ref(false);
+const dialogVisible = ref(false);
+const selectedTable = ref("");
 const reservations = ref([]);
 
 const date = computed(() => store.getters.date);
@@ -169,20 +106,25 @@ const tables = reactive({
   room: [],
 });
 
-const tablesList = computed(() => [
-  { key: "table_1", number: 1, items: tables.table_1 },
-  { key: "table_2", number: 2, items: tables.table_2 },
-  { key: "table_3", number: 3, items: tables.table_3 },
-  { key: "table_4", number: 4, items: tables.table_4 },
-  { key: "table_5", number: 5, items: tables.table_5 },
-  { key: "table_6", number: 6, items: tables.table_6 },
-  { key: "table_7", number: 7, items: tables.table_7 },
-  { key: "table_8", number: 8, items: tables.table_8 },
-  { key: "table_9", number: 9, items: tables.table_9 },
-  { key: "table_10", number: 10, items: tables.table_10 },
-  { key: "pull", number: 11, items: tables.pull },
-  { key: "room", number: 12, items: tables.room },
-]);
+const svgTables = [
+  { id: "11", label: "Pull", shape: "rect", transform: "translate(35,60)", shapeProps: { x: -20, y: -15, width: 40, height: 30, rx: 6 } },
+  { id: "8", label: "8", shape: "rect", transform: "translate(107,40)", shapeProps: { x: -20, y: -15, width: 40, height: 30, rx: 6 } },
+  { id: "9", label: "9", shape: "rect", transform: "translate(170,60)", shapeProps: { x: -20, y: -15, width: 40, height: 30, rx: 6 } },
+  { id: "10", label: "10", shape: "rect", transform: "translate(107,90)", shapeProps: { x: -20, y: -15, width: 40, height: 30, rx: 6 } },
+  { id: "1", label: "1", shape: "rect", transform: "translate(35,140)", shapeProps: { x: -30, y: -15, width: 60, height: 30, rx: 6 } },
+  { id: "2", label: "2", shape: "circle", transform: "translate(190,140)", shapeProps: { r: 16 } },
+  { id: "3", label: "3", shape: "rect", transform: "translate(35,210)", shapeProps: { x: -30, y: -15, width: 60, height: 30, rx: 6 } },
+  { id: "4", label: "4", shape: "circle", transform: "translate(90,210)", shapeProps: { r: 16 } },
+  { id: "5", label: "5", shape: "rect", transform: "translate(140,210)", shapeProps: { x: -30, y: -15, width: 60, height: 30, rx: 6 } },
+  { id: "6", label: "6", shape: "circle", transform: "translate(190,210)", shapeProps: { r: 16 } },
+  { id: "7", label: "7", shape: "circle", transform: "translate(35,280)", shapeProps: { r: 16 } },
+];
+
+const selectedTableReservations = computed(() =>
+  selectedTable.value ? filterByTable(selectedTable.value) : []
+);
+
+const isRoomReserved = computed(() => tables.room.length > 0);
 
 const filterByTable = (tableId) =>
   reservations.value.filter((item) => item.table === tableId);
@@ -222,9 +164,9 @@ const delReserve = async ({ id }) => {
     const status = await store.dispatch("delInfo", { id });
     if (status === 204 || status === "204") {
       await fetchReservations();
-      alert("Бронь удалена");
+      ElMessage.success("Бронь удалена");
     } else {
-      alert(status);
+      ElMessage.error(status);
     }
   } finally {
     loading.value = false;
@@ -232,24 +174,44 @@ const delReserve = async ({ id }) => {
 };
 
 const creatReserve = async (data) => {
+  const targetTable = data.numTable || selectedTable.value;
   if (!data.time || !data.person) {
-    alert("Укажите время и количество гостей");
+    ElMessage.warning("Укажите время и количество гостей");
     return;
   }
   loading.value = true;
   try {
-    const status = await store.dispatch("creatInfo", { data });
+    const status = await store.dispatch("creatInfo", {
+      data: { ...data, numTable: targetTable },
+    });
     if (status === 201 || status === "201") {
       await fetchReservations();
-      alert("Бронь создана");
-      sendPushMessage(data, date.value).catch((error) => console.log(error));
+      ElMessage.success("Бронь создана");
+      sendPushMessage({ ...data, numTable: targetTable }, date.value).catch(
+        (error) => console.log(error)
+      );
     } else {
-      alert(status);
+      ElMessage.error(status);
     }
   } finally {
     loading.value = false;
   }
 };
+
+const tableColor = (tableId) => {
+  const has = filterByTable(tableId).length > 0;
+  if (tableId === "12") return has ? "#ef4444" : "#22c55e";
+  return has ? "#ef4444" : "#38bdf8";
+};
+
+const openTable = (tableId) => {
+  selectedTable.value = String(tableId);
+  dialogVisible.value = true;
+};
+
+const openRoom = () => openTable("12");
+
+defineExpose({ openRoom });
 
 watch(date, () => fetchReservations(), { immediate: true });
 watch(reservations, () => populateTables(), { immediate: true, deep: true });
@@ -262,4 +224,58 @@ watch(
 );
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.plan {
+  background: linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+  border-radius: 12px;
+  padding: 16px;
+  color: #e5e7eb;
+  min-height: 520px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+.plan__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.plan__title {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.plan__subtitle {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.plan__canvas {
+  position: relative;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 460px;
+  background: #0b1220;
+}
+
+svg {
+  width: 100%;
+  height: 100%;
+}
+
+.table-node {
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.table-node:hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.35));
+}
+
+.hall {
+  cursor: pointer;
+}
+</style>
