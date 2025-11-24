@@ -1,101 +1,77 @@
 <template>
-  <header>
-    <nav>
-      <div class="nav-wrapper indigo darken-3">
-        <a
-          href="#!"
-          class="brand-logo left logo white"
-          @click.prevent="refresh"
-        />
-        <button
-          class="btn right btn-nav modal-trigger"
-          data-target="modal12"
-          :class="{ red: isRoomReserved }"
-        >
-          Бронь зала
-        </button>
-      </div>
-    </nav>
-    <ModalApp
-      :table="roomReservations"
-      :numberTable="12"
-      @del="delReserve"
-      @creat="creatReserve"
-    />
+  <header class="navbar">
+    <div class="navbar__brand" @click="refresh">
+      <div class="logo" />
+      <span class="navbar__title">IGGY Reservation</span>
+    </div>
+    <div class="navbar__actions">
+      <el-tag :type="isRoomReserved ? 'danger' : 'success'" effect="dark">
+        {{ isRoomReserved ? "Зал занят" : "Зал свободен" }}
+      </el-tag>
+      <el-button
+        type="primary"
+        :plain="!isRoomReserved"
+        @click="$emit('open-room')"
+      >
+        Бронь зала
+      </el-button>
+    </div>
   </header>
 </template>
 
 <script setup>
-import { computed, ref, watch } from "vue";
+import { computed } from "vue";
 import { useStore } from "vuex";
-import ModalApp from "./ModalApp.vue";
+
+defineEmits(["open-room"]);
 
 const store = useStore();
-const reservations = ref([]);
-const loading = ref(false);
 
-const date = computed(() => store.getters.date);
-const storeReservations = computed(() => store.getters.reservation || []);
-
-const roomReservations = computed(() =>
-  reservations.value.filter((item) => item.table === "12")
+const reservations = computed(() => store.getters.reservation || []);
+const isRoomReserved = computed(() =>
+  reservations.value.some((item) => item.table === "12")
 );
-const isRoomReserved = computed(() => roomReservations.value.length > 0);
 
-const fetchReservations = async () => {
-  if (!date.value) return;
-  loading.value = true;
-  try {
-    const data = await store.dispatch("fetchInfo");
-    reservations.value = data || [];
-  } catch (error) {
-    console.log(error);
-  } finally {
-    loading.value = false;
-  }
+const refresh = () => {
+  store.dispatch("fetchInfo").catch((error) => console.log(error));
 };
-
-const delReserve = async ({ id }) => {
-  if (!id) return;
-  loading.value = true;
-  try {
-    const status = await store.dispatch("delInfo", { id });
-    if (status === 204 || status === "204") {
-      await fetchReservations();
-      alert("Бронь удалена");
-    } else {
-      alert(status);
-    }
-  } finally {
-    loading.value = false;
-  }
-};
-
-const creatReserve = async (data) => {
-  loading.value = true;
-  try {
-    const status = await store.dispatch("creatInfo", { data });
-    if (status === 201 || status === "201") {
-      await fetchReservations();
-      alert("Бронь создана");
-    } else {
-      alert(status);
-    }
-  } finally {
-    loading.value = false;
-  }
-};
-
-const refresh = () => fetchReservations();
-
-watch(date, () => fetchReservations(), { immediate: true });
-watch(
-  storeReservations,
-  (value) => {
-    reservations.value = value;
-  },
-  { immediate: true, deep: true }
-);
 </script>
 
-<style lang="scss"></style>
+<style lang="scss" scoped>
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #111827;
+  color: #e5e7eb;
+  padding: 12px 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.navbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.navbar__title {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.logo {
+  background-image: url("../assets/logo__white.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  width: 40px;
+  height: 40px;
+}
+
+.navbar__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+</style>
