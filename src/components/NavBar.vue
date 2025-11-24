@@ -4,33 +4,13 @@
       <div class="logo" />
       <span class="navbar__title">IGGY Reservation</span>
     </div>
-    <div class="navbar__actions">
-      <!-- <el-tag :type="isRoomReserved ? 'danger' : 'success'" effect="dark">
-        {{ isRoomReserved ? "Зал занят" : "Зал свободен" }}
-      </el-tag> -->
-      <el-button
-        type="primary"
-        :plain="!isRoomReserved"
-        @click="$emit('open-room')"
-      >
-        Бронь зала
-      </el-button>
-    </div>
   </header>
 </template>
 
 <script setup>
-import { computed } from "vue";
 import { useStore } from "vuex";
 
-defineEmits(["open-room"]);
-
 const store = useStore();
-
-const reservations = computed(() => store.getters.reservation || []);
-const isRoomReserved = computed(() =>
-  reservations.value.some((item) => item.table === "12")
-);
 
 const refresh = () => {
   store.dispatch("fetchInfo").catch((error) => console.log(error));
@@ -67,11 +47,5 @@ const refresh = () => {
   background-size: contain;
   width: 40px;
   height: 40px;
-}
-
-.navbar__actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
 }
 </style>

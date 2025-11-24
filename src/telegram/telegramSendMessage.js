@@ -8,7 +8,7 @@ export async function sendPushMessage(data, date) {
     return;
   }
 
-  const text = `Новая бронь: ${data.time || "-"} (${date || "-"})
+  const text = `Новая бронь: ${data.time || "-"} (${date || "-"}
 Гость: ${data.name || "-"}
 Гостей: ${data.person || "-"}
 Телефон: ${data.tel || "-"}`;

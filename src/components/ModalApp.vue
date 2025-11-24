@@ -8,8 +8,8 @@
     <div class="dialog-grid">
       <div class="dialog-grid__left">
         <div class="dialog-grid__subtitle">Текущие брони</div>
-        <!-- <el-empty v-if="!table.length" description="Нет броней" /> -->
-        <el-timeline>
+        <el-empty v-if="!table.length" description="Пока нет броней" />
+        <el-timeline v-else>
           <el-timeline-item
             v-for="res in table"
             :key="res.id"
@@ -17,7 +17,7 @@
             placement="top"
           >
             <div class="booking-card">
-              <div class="booking-card__name">{{ res.name || "Гость" }}</div>
+              <div class="booking-card__name">{{ res.name || "Без имени" }}</div>
               <div class="booking-card__meta">
                 <span>Гостей: {{ res.person || "-" }}</span>
                 <span>Телефон: {{ res.phone || "-" }}</span>

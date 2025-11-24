@@ -2,14 +2,23 @@
   <div class="plan" v-loading="loading">
     <div class="plan__header">
       <p class="plan__title">План зала</p>
-      <el-tag :type="isRoomReserved ? 'danger' : 'success'" effect="dark">
-        {{ isRoomReserved ? "Зал занят" : "Зал свободен" }}
-      </el-tag>
-      <p class="plan__subtitle">Нажмите на стол, чтобы открыть бронь</p>
+      <el-button
+        class="room-button"
+        :type="isRoomReserved ? 'danger' : 'success'"
+        @click="openRoom"
+      >
+        Бронь зала
+      </el-button>
+      <p class="plan__subtitle">Нажмите на стол или зал, чтобы открыть бронь</p>
     </div>
 
     <div class="plan__canvas">
-      <svg width="100%" viewBox="0 0 214 325" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+      <svg
+        width="100%"
+        viewBox="0 0 214 325"
+        preserveAspectRatio="xMidYMid meet"
+        xmlns="http://www.w3.org/2000/svg"
+      >
         <rect x="0" y="0" width="100%" fill="#0b1220" />
         <line x1="0" y1="120" x2="100%" y2="120" stroke="#1f2937" stroke-width="2" />
 
@@ -18,10 +27,20 @@
           <rect x="0" y="0" width="100%" height="120" fill="url(#hallGradient)" />
         </g>
 
-        <g v-for="table in svgTables" :key="table.id" :transform="table.transform" class="table-node"
-          @click="openTable(table.id)">
-          <component :is="table.shape" v-bind="table.shapeProps" :fill="tableColor(table.id)" stroke="#111827"
-            stroke-width="2" />
+        <g
+          v-for="table in svgTables"
+          :key="table.id"
+          :transform="table.transform"
+          class="table-node"
+          @click="openTable(table.id)"
+        >
+          <component
+            :is="table.shape"
+            v-bind="table.shapeProps"
+            :fill="tableColor(table.id)"
+            stroke="#111827"
+            stroke-width="2"
+          />
           <text x="0" y="4" text-anchor="middle" font-size="12" fill="#0b1220" font-weight="700">
             {{ table.label }}
           </text>
@@ -29,7 +48,7 @@
         <g class="hall" @click="openRoom" v-if="isRoomReserved">
           <rect x="0" y="0" width="100%" height="120" fill="url(#hallGradient)" />
           <text x="50%" y="60" text-anchor="middle" font-size="22" fill="#0b1220" font-weight="700">
-            Аренда
+            Зал занят
           </text>
         </g>
         <defs>
@@ -41,8 +60,14 @@
       </svg>
     </div>
 
-    <ModalApp v-if="selectedTable" v-model="dialogVisible" :table="selectedTableReservations"
-      :numberTable="selectedTable" @del="delReserve" @creat="creatReserve" />
+    <ModalApp
+      v-if="selectedTable"
+      v-model="dialogVisible"
+      :table="selectedTableReservations"
+      :numberTable="selectedTable"
+      @del="delReserve"
+      @creat="creatReserve"
+    />
   </div>
 </template>
 
@@ -147,7 +172,7 @@ const delReserve = async ({ id }) => {
 const creatReserve = async (data) => {
   const targetTable = data.numTable || selectedTable.value;
   if (!data.time || !data.person) {
-    ElMessage.warning("Укажите время и количество гостей");
+    ElMessage.warning("Заполните время и количество гостей");
     return;
   }
   loading.value = true;
@@ -157,7 +182,7 @@ const creatReserve = async (data) => {
     });
     if (status === 201 || status === "201") {
       await fetchReservations();
-      ElMessage.success("Бронь создана");
+      ElMessage.success("Бронь добавлена");
       // sendPushMessage({ ...data, numTable: targetTable }, date.value).catch(
       //   (error) => console.log(error)
       // );
@@ -213,6 +238,10 @@ watch(
   margin: 10px;
 }
 
+.room-button {
+  justify-self: end;
+}
+
 .plan__title {
   font-size: 20px;
   font-weight: 700;
@@ -229,7 +258,6 @@ watch(
 .plan__canvas {
   max-height: 70vh;
 }
-
 
 .plan__canvas svg {
   width: 100%;
