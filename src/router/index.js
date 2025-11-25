@@ -27,6 +27,15 @@ const routes = [
       },
     ],
   },
+  {
+    path: "/profile",
+    name: "profile",
+    meta: {
+      layout: "main",
+      auth: true,
+    },
+    component: () => import("../views/ProfilePage.vue"),
+  },
 ];
 
 const router = createRouter({

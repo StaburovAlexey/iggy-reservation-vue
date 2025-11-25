@@ -7,7 +7,7 @@
         :type="isRoomReserved ? 'danger' : 'success'"
         @click="openRoom"
       >
-        Бронь зала
+        Бронь комнаты
       </el-button>
       <p class="plan__subtitle">Нажмите на стол или зал, чтобы открыть бронь</p>
     </div>
@@ -48,7 +48,7 @@
         <g class="hall" @click="openRoom" v-if="isRoomReserved">
           <rect x="0" y="0" width="100%" height="120" fill="url(#hallGradient)" />
           <text x="50%" y="60" text-anchor="middle" font-size="22" fill="#0b1220" font-weight="700">
-            Зал занят
+            Комната занята
           </text>
         </g>
         <defs>

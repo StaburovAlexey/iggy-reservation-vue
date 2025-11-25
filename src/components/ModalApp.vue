@@ -98,12 +98,11 @@ const visible = computed({
 
 const numTable = computed(() => String(props.numberTable));
 
-const fillForm = (tableData) => {
-  const first = tableData?.[0];
-  form.time = first?.time || "";
-  form.person = first?.person || "";
-  form.name = first?.name || "";
-  form.tel = first?.phone || "";
+const resetForm = () => {
+  form.time = "";
+  form.person = "";
+  form.name = "";
+  form.tel = "";
 };
 
 const emitCreate = () => {
@@ -119,7 +118,8 @@ const emitDelete = (id) => {
 watch(
   () => props.table,
   (value) => {
-    fillForm(value);
+    // keep form empty even if there are existing bookings
+    resetForm();
     deletingId.value = null;
   },
   { deep: true, immediate: true }
@@ -128,7 +128,11 @@ watch(
 watch(
   () => props.modelValue,
   (isOpen) => {
-    if (!isOpen) deletingId.value = null;
+    if (!isOpen) {
+      deletingId.value = null;
+    } else {
+      resetForm();
+    }
   }
 );
 </script>

@@ -25,6 +25,9 @@
           <el-dropdown-item @click="toggleTheme">
             Сменить тему: {{ nextThemeLabel }}
           </el-dropdown-item>
+          <el-dropdown-item divided @click="logout">
+            Выйти из аккаунта
+          </el-dropdown-item>
         </el-dropdown-menu>
       </template>
     </el-dropdown>
@@ -32,11 +35,14 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { useStore } from "vuex";
 import { ArrowDown } from "@element-plus/icons-vue";
+import { supabase } from "@/lib/supabaseClient";
 
 const store = useStore();
+const router = useRouter();
 const THEME_KEY = "iggy-theme";
 const theme = ref(localStorage.getItem(THEME_KEY) || "dark");
 
@@ -65,7 +71,7 @@ watch(
 );
 
 const nextThemeLabel = computed(() =>
-  theme.value === "light" ? "Тёмная" : "Светлая"
+  theme.value === "light" ? "Светлая тема" : "Темная тема"
 );
 
 const refresh = () => {
@@ -77,9 +83,26 @@ const toggleTheme = () => {
 };
 
 const editProfile = () => {
-  // Заглушка: здесь может быть переход на страницу профиля
-  console.log("Открыть профиль");
+  router.push("/profile");
 };
+
+const logout = async () => {
+  try {
+    await supabase.auth.signOut();
+    store.commit("clearUser");
+  } catch (error) {
+    console.log(error);
+  } finally {
+    router.push("/login");
+  }
+};
+
+onMounted(async () => {
+  const { data, error } = await supabase.auth.getUser();
+  if (!error && data?.user) {
+    store.commit("setUser", data.user);
+  }
+});
 </script>
 
 <style lang="scss" scoped>
