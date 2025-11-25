@@ -25,6 +25,23 @@
           <el-form-item label="E-mail">
             <el-input v-model="form.email" type="email" placeholder="you@example.com" />
           </el-form-item>
+          <el-form-item label="Аватар">
+            <div class="avatar-upload">
+              <el-avatar :size="72" :src="avatarPreview" class="avatar-upload__preview">
+                {{ initials }}
+              </el-avatar>
+              <el-upload
+                action=""
+                :auto-upload="false"
+                :show-file-list="false"
+                accept="image/*"
+                :on-change="handleAvatarChange"
+              >
+                <el-button>Выбрать файл</el-button>
+              </el-upload>
+              <div class="avatar-upload__hint">PNG/JPG до 2MB</div>
+            </div>
+          </el-form-item>
           <el-form-item label="Новый пароль">
             <el-input
               v-model="form.password"
@@ -65,14 +82,17 @@ const router = useRouter();
 
 const loadingProfile = ref(true);
 const saving = ref(false);
+const avatarFile = ref(null);
 const form = reactive({
   fullName: "",
   email: "",
   password: "",
+  avatarUrl: "",
 });
 const original = reactive({
   fullName: "",
   email: "",
+  avatarUrl: "",
 });
 
 const canSave = computed(
@@ -82,13 +102,16 @@ const canSave = computed(
     !!form.email &&
     (form.fullName !== original.fullName ||
       form.email !== original.email ||
-      !!form.password)
+      !!form.password ||
+      !!avatarFile.value)
 );
 
 const resetForm = () => {
   form.fullName = original.fullName;
   form.email = original.email;
   form.password = "";
+  form.avatarUrl = original.avatarUrl;
+  avatarFile.value = null;
 };
 
 const loadUser = async () => {
@@ -101,6 +124,7 @@ const loadUser = async () => {
     const currentUser = data.user;
     original.fullName = currentUser.user_metadata?.full_name || "";
     original.email = currentUser.email || "";
+    original.avatarUrl = currentUser.user_metadata?.avatar_url || "";
     resetForm();
     store.commit("setUser", currentUser);
   } catch (error) {
@@ -118,7 +142,18 @@ const saveProfile = async () => {
   try {
     const payload = {};
     const meta = {};
-
+    // upload avatar if selected
+    if (avatarFile.value) {
+      const ext = avatarFile.value.name?.split(".").pop() || "png";
+      const fileName = `avatar-${Date.now()}.${ext}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, avatarFile.value);
+      if (uploadError) throw uploadError;
+      const { data: publicUrl } = supabase.storage.from("avatars").getPublicUrl(uploadData.path);
+      meta.avatar_url = publicUrl.publicUrl;
+      form.avatarUrl = meta.avatar_url;
+    }
     if (form.fullName !== original.fullName) {
       meta.full_name = form.fullName;
     }
@@ -138,6 +173,7 @@ const saveProfile = async () => {
 
     original.fullName = updatedUser.user_metadata?.full_name || "";
     original.email = updatedUser.email || "";
+    original.avatarUrl = updatedUser.user_metadata?.avatar_url || "";
     resetForm();
     store.commit("setUser", updatedUser);
     ElMessage.success("Профиль обновлен");
@@ -154,6 +190,18 @@ const goHome = () => {
 };
 
 onMounted(loadUser);
+
+const handleAvatarChange = (file) => {
+  avatarFile.value = file.raw;
+};
+
+const initials = computed(() =>
+  form.fullName ? form.fullName.slice(0, 1).toUpperCase() : "U"
+);
+
+const avatarPreview = computed(() =>
+  avatarFile.value ? URL.createObjectURL(avatarFile.value) : form.avatarUrl || ""
+);
 </script>
 
 <style lang="scss" scoped>
@@ -208,5 +256,21 @@ onMounted(loadUser);
   justify-content: center;
   align-items: center;
   min-height: 240px;
+}
+
+.avatar-upload {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar-upload__preview {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.avatar-upload__hint {
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 </style>
