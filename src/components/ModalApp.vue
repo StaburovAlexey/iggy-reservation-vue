@@ -29,7 +29,7 @@
                 </el-avatar>
                 <div class="booking-card__user-info">
                   <div class="booking-card__user-name">{{ userName(res) }}</div>
-                  <div class="booking-card__user-label">{{ userEmail(res) }}</div>
+                  <div class="booking-card__user-label">{{ userEmailMasked(res) }}</div>
                 </div>
               </div>
               <el-button
@@ -136,8 +136,14 @@ const emitDelete = (id) => {
   emit("del", { id });
 };
 
-const userName = (res) => res?.user?.full_name || res?.name || "Без имени";
+const userName = (res) => res?.user?.full_name || "Без имени";
 const userEmail = (res) => res?.user?.email || "Без email";
+const userEmailMasked = (res) => {
+  const email = res?.user?.email;
+  if (!email) return "Нет почты";
+  const prefix = email.slice(0, 5);
+  return email.length > 5 ? `${prefix}...` : prefix;
+};
 const userAvatar = (res) => res?.user?.avatar_url || "";
 const userInitial = (res) => userName(res).slice(0, 1).toUpperCase();
 

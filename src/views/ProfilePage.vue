@@ -17,13 +17,14 @@
           :model="form"
           label-position="top"
           class="profile-form"
+          autocomplete="off"
           @submit.prevent
         >
           <el-form-item label="Имя">
-            <el-input v-model="form.fullName" placeholder="Как вас зовут?" />
+            <el-input v-model="form.fullName" autocomplete="off" placeholder="Как вас зовут?" />
           </el-form-item>
           <el-form-item label="E-mail">
-            <el-input v-model="form.email" type="email" placeholder="you@example.com" />
+            <el-input v-model="form.email" autocomplete="off" type="email" placeholder="you@example.com" />
           </el-form-item>
           <el-form-item label="Аватар">
             <div class="avatar-upload">
@@ -45,6 +46,7 @@
           <el-form-item label="Новый пароль">
             <el-input
               v-model="form.password"
+              autocomplete="new-password"
               type="password"
               show-password
               placeholder="Оставьте пустым, если не нужно менять"
@@ -63,6 +65,33 @@
             </el-button>
           </div>
         </el-form>
+        <el-card v-if="canInvite" class="invite-card" shadow="never">
+          <div class="invite-card__header">
+            <div>
+              <h3 class="invite-card__title">Добавить пользователя</h3>
+              <p class="invite-card__subtitle">
+                Отправьте приглашение по электронной почте новому пользователю.
+              </p>
+            </div>
+          </div>
+          <div class="invite-card__form">
+            <el-input
+              v-model="inviteEmail"
+              type="email"
+              placeholder="email получателя"
+              :disabled="sendingInvite"
+            />
+            <el-button
+              type="primary"
+              :loading="sendingInvite"
+              :disabled="sendingInvite"
+              @click="sendInvite"
+            >
+              Отправить
+            </el-button>
+          </div>
+        </el-card>
+
       </el-card>
     </div>
   </div>
@@ -83,6 +112,8 @@ const router = useRouter();
 const loadingProfile = ref(true);
 const saving = ref(false);
 const avatarFile = ref(null);
+const inviteEmail = ref("");
+const sendingInvite = ref(false);
 const form = reactive({
   fullName: "",
   email: "",
@@ -94,6 +125,9 @@ const original = reactive({
   email: "",
   avatarUrl: "",
 });
+
+const adminEmails = ["gilbertfrost@yandex,ru", "gilbertfrost@yandex.ru"];
+const canInvite = computed(() => adminEmails.includes((store.getters.user?.email || "").toLowerCase()));
 
 const canSave = computed(
   () =>
@@ -112,6 +146,32 @@ const resetForm = () => {
   form.password = "";
   form.avatarUrl = original.avatarUrl;
   avatarFile.value = null;
+};
+
+const sendInvite = async () => {
+  if (!canInvite.value) return;
+  if (!inviteEmail.value) {
+    ElMessage.warning("Укажите email получателя");
+    return;
+  }
+  sendingInvite.value = true;
+  try {
+    const { error } = await supabase.auth.signInWithOtp({
+      email: inviteEmail.value,
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${window.location.origin}/magic-link`,
+      },
+    });
+    if (error) throw error;
+    ElMessage.success("Инвайт отправлен");
+    inviteEmail.value = "";
+  } catch (error) {
+    console.log(error);
+    ElMessage.error("Не удалось отправить инвайт");
+  } finally {
+    sendingInvite.value = false;
+  }
 };
 
 const loadUser = async () => {
@@ -249,6 +309,38 @@ const avatarPreview = computed(() =>
   justify-content: flex-end;
   gap: 8px;
   margin-top: 4px;
+}
+
+.invite-card {
+  margin-top: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+}
+
+.invite-card__header {
+  margin-bottom: 8px;
+}
+
+.invite-card__title {
+  margin: 0;
+}
+
+.invite-card__subtitle {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.invite-card__form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.invite-card__form :deep(.el-input) {
+  flex: 1;
+  min-width: 200px;
 }
 
 .profile-loader {

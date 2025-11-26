@@ -36,6 +36,15 @@ const routes = [
     },
     component: () => import("../views/ProfilePage.vue"),
   },
+  {
+    path: "/magic-link",
+    name: "magic-link",
+    meta: {
+      layout: "auth",
+      auth: false,
+    },
+    component: () => import("../views/MagicLinkPage.vue"),
+  },
 ];
 
 const router = createRouter({
