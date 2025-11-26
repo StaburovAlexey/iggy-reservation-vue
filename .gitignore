@@ -1,10 +1,7 @@
 .DS_Store
 node_modules
 dist
-d
-src/lib
-src/lib/supabaseClient.js
-src/lib/telegramApi.js
+
 
 # local env files
 .env.local

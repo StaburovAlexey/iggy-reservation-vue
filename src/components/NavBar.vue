@@ -1,79 +1,184 @@
 <template>
-  <header>
-    <nav>
-      <div class="nav-wrapper indigo darken-3">
-        <a href="#!" class="brand-logo left logo white" @click="close"></a>
-        <button
-          class="btn right btn-nav modal-trigger"
-          data-target="modal12"
-          :class="{
-            red: reserve.room == true,
-          }"
-        >
-          Аренда комнаты
-        </button>
+  <header class="navbar">
+    <div class="navbar__brand" @click="refresh">
+      <div class="logo" />
+      <span class="navbar__title">IGGY Reservation</span>
+    </div>
+    <el-dropdown trigger="click">
+      <div class="navbar__menu-btn">
+        <el-avatar :size="36" :src="avatarUrl" class="navbar__avatar">{{ avatarFallback }}</el-avatar>
+        <span class="navbar__name">{{ userName }}</span>
+        <el-icon><ArrowDown /></el-icon>
       </div>
-    </nav>
-    <ModalApp
-      :table="reserve.room"
-      :numberTable="12"
-      @del="delReserve"
-      @creat="creatReserve"
-    >
-    </ModalApp>
+      <template #dropdown>
+        <el-dropdown-menu class="navbar__dropdown">
+          <el-dropdown-item class="navbar__user">
+            <el-avatar :size="40" :src="avatarUrl" class="navbar__avatar">{{ avatarFallback }}</el-avatar>
+            <div class="navbar__user-info">
+              <div class="navbar__user-name">{{ userName }}</div>
+              <div class="navbar__user-mail">{{ userEmail }}</div>
+            </div>
+          </el-dropdown-item>
+          <el-dropdown-item divided @click="editProfile">
+            Редактировать профиль
+          </el-dropdown-item>
+          <el-dropdown-item @click="toggleTheme">
+            Сменить тему: {{ nextThemeLabel }}
+          </el-dropdown-item>
+          <el-dropdown-item divided @click="logout">
+            Выйти из аккаунта
+          </el-dropdown-item>
+        </el-dropdown-menu>
+      </template>
+    </el-dropdown>
   </header>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      reserve: {},
-    };
-  },
-  mounted() {},
-  computed: {
-    date() {
-      return this.$store.getters.date;
-    },
-  },
-  methods: {
-    async open() {
-      const day = await this.$store.dispatch("fetchInfo");
-      this.reserve = day;
-    },
-    async delReserve(id) {
-      console.log("delreserve", id.id);
-      this.loading = true;
-      const status = await this.$store.dispatch("delInfo", { id: id.id });
-      if (status == "204") {
-        await this.open();
-        alert("Запись удалена");
-        this.loading = false;
-      } else {
-        alert(status);
-        this.loading = false;
-      }
-    },
-    async creatReserve(data) {
-      this.loading = true;
-      const status = await this.$store.dispatch("creatInfo", { data });
-      if (status == "201") {
-        await this.open();
-        alert("Запись добавлена");
-        this.loading = false;
-      } else {
-        alert(status);
-        this.loading = false;
-      }
-    },
-  },
-  watch: {
-    date() {
-      this.open();
-    },
-  },
+<script setup>
+import { computed, onMounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
+import { useStore } from "vuex";
+import { ArrowDown } from "@element-plus/icons-vue";
+import { supabase } from "@/lib/supabaseClient";
+
+const store = useStore();
+const router = useRouter();
+const THEME_KEY = "iggy-theme";
+const theme = ref(localStorage.getItem(THEME_KEY) || "dark");
+
+const user = computed(() => store.getters.user || {});
+const userName = computed(
+  () => user.value.user_metadata?.full_name || user.value.email || "Пользователь"
+);
+const userEmail = computed(() => user.value.email || "Нет e-mail");
+const avatarUrl = computed(() => user.value.user_metadata?.avatar_url || "");
+const avatarFallback = computed(() =>
+  userName.value ? userName.value.slice(0, 1).toUpperCase() : "U"
+);
+
+const applyTheme = (value) => {
+  const root = document.documentElement;
+  root.classList.remove("theme-light", "theme-dark");
+  const normalized = value === "light" ? "light" : "dark";
+  root.classList.add(`theme-${normalized}`);
+  localStorage.setItem(THEME_KEY, normalized);
 };
+
+watch(
+  theme,
+  (value) => applyTheme(value),
+  { immediate: true }
+);
+
+const nextThemeLabel = computed(() =>
+  theme.value === "light" ? "Светлая тема" : "Темная тема"
+);
+
+const refresh = () => {
+  store.dispatch("fetchInfo").catch((error) => console.log(error));
+};
+
+const toggleTheme = () => {
+  theme.value = theme.value === "light" ? "dark" : "light";
+};
+
+const editProfile = () => {
+  router.push("/profile");
+};
+
+const logout = async () => {
+  try {
+    await supabase.auth.signOut();
+    store.commit("clearUser");
+  } catch (error) {
+    console.log(error);
+  } finally {
+    router.push("/login");
+  }
+};
+
+onMounted(async () => {
+  const { data, error } = await supabase.auth.getUser();
+  if (!error && data?.user) {
+    store.commit("setUser", data.user);
+  }
+});
 </script>
 
-<style lang="scss"></style>
+<style lang="scss" scoped>
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-navbar);
+  color: var(--text-primary);
+  padding: 6px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.navbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.navbar__title {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.logo {
+  background-image: url("../assets/logo__white.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  width: 40px;
+  height: 40px;
+}
+
+.navbar__menu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.navbar__avatar {
+  margin-right: 10px;
+  background: var(--bg-surface-2);
+  color: var(--text-primary);
+}
+
+.navbar__name {
+  font-weight: 600;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.navbar__dropdown {
+  min-width: 220px;
+}
+
+.navbar__user {
+  gap: 8px;
+  cursor: default;
+}
+
+.navbar__user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar__user-name {
+  font-weight: 700;
+}
+
+.navbar__user-mail {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+</style>

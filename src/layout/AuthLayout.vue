@@ -1,11 +1,9 @@
 <template>
   <div class="auth-conteiner black">
-    <router-view></router-view>
+    <router-view />
   </div>
 </template>
 
-<script>
-export default {};
-</script>
+<script setup></script>
 
 <style lang="css"></style>

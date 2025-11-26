@@ -9,7 +9,16 @@ export default {
     async fetchInfo({ commit, state }) {
       const { data, error } = await supabase
         .from("tables")
-        .select()
+        .select(
+          `
+            *,
+            user:profiles (
+              email,
+              full_name,
+              avatar_url
+            )
+          `
+        )
         .eq("date", state.date);
       if (error) {
         throw error;
@@ -19,11 +28,12 @@ export default {
       }
     },
     async delInfo({}, { id }) {
-      console.log("del", id);
+      // supabase.eq сам добавляет оператор, поэтому убираем возможный префикс "eq."
+      const cleanId = typeof id === "string" ? id.replace(/^eq\./, "") : id;
       const { error, status } = await supabase
         .from("tables")
         .delete()
-        .eq("id", id);
+        .eq("id", cleanId);
       if (error) {
         console.log("del", error);
       }
@@ -37,6 +47,7 @@ export default {
         time: data.time,
         phone: data.tel,
         date: state.date,
+        user_id: data.userId,
       });
       if (error) {
         console.log(error);

@@ -1,12 +1,47 @@
+:root {
+  --bg-surface: #0f172a;
+  --bg-surface-2: #0b1220;
+  --bg-navbar: #535353;
+  --text-primary: #e5e7eb;
+  --text-secondary: #94a3b8;
+  --border-color: #1f2937;
+  --gradient-start: #0f172a;
+  --gradient-end: #0b1220;
+  --canvas-bg: #0b1220;
+}
+
+:root.theme-light {
+  --bg-surface: #f8fafc;
+  --bg-surface-2: #ffffff;
+  --bg-navbar: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --border-color: #cbd5e1;
+  --gradient-start: #f8fafc;
+  --gradient-end: #e2e8f0;
+  --canvas-bg: #ffffff;
+}
+
+html {
+  min-height: 100svh;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+#app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
 .main {
   width: 100%;
   height: 60vh;
   flex: 1 0 auto;
   position: relative;
-
 }
 
-.rent-main{
+.rent-main {
   position: absolute;
   top: 0;
   left: 0;
@@ -56,7 +91,7 @@
 
 .main-layout {
   display: flex;
-  min-height: 100svh;
+  min-height: 100vh;
   flex-direction: column;
 }
 .row-modal {
@@ -95,11 +130,11 @@
   border-bottom: 1px solid black;
 }
 
-.btn-nav{
+.btn-nav {
   margin: 10px 10px 0 0;
 }
 
-.list-pull{
+.list-pull {
   position: relative;
   z-index: 10;
   background-color: transparent;

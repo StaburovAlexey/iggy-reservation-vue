@@ -1,75 +1,101 @@
 <template>
-  <form class="card white" @submit.prevent="submit">
-    <div class="card-content">
-      <div class="center">
+  <div class="auth">
+    <el-card class="auth__card" shadow="hover">
+      <div class="auth__logo">
         <img class="logo-auth" src="../assets/logo-black.png" alt="logo" />
       </div>
-      <div class="input-field">
-        <i class="material-icons prefix">account_circle</i>
-        <input id="icon_prefix" type="email" class="validate" v-model="email" />
-        <label for="icon_prefix">Ваш e-mail</label>
-      </div>
-      <div class="input-field">
-        <i class="material-icons prefix">border_color</i>
-        <input id="password" type="password" class="validate" v-model="pass" />
-        <label for="password">Пароль</label>
-      </div>
-      <div class="center">
-        <PreloaderApp v-if="loading"></PreloaderApp>
-        <button
-          v-else
-          class="btn waves-effect waves-light center"
-          type="submit"
-          name="action"
-          :disabled="disabled"
-        >
-          Войти
-          <i class="material-icons right">send</i>
-        </button>
-      </div>
-    </div>
-  </form>
+      <el-form :model="form" label-position="top" @submit.prevent>
+        <el-form-item label="Ваш e-mail">
+          <el-input
+            v-model="form.email"
+            type="email"
+            placeholder="you@example.com"
+          />
+        </el-form-item>
+        <el-form-item label="Пароль">
+          <el-input v-model="form.pass" type="password" show-password />
+        </el-form-item>
+        <div class="auth__actions">
+          <PreloaderApp v-if="loading" />
+          <el-button
+            v-else
+            type="primary"
+            size="large"
+            :disabled="disabled"
+            @click="submit"
+          >
+            Войти
+          </el-button>
+        </div>
+      </el-form>
+    </el-card>
+  </div>
 </template>
 
-<script>
+<script setup>
+import { ElMessage } from "element-plus";
+import { computed, reactive, ref } from "vue";
+import { useRouter } from "vue-router";
+import { useStore } from "vuex";
 import PreloaderApp from "@/components/PreloaderApp.vue";
 
-export default {
-  data() {
-    return {
-      email: "",
-      pass: "",
-      loading: false,
-    };
-  },
-  methods: {
-    async submit() {
-      this.loading = true;
-      const formData = {
-        email: this.email,
-        pass: this.pass,
-      };
-      try {
-        await this.$store.dispatch("login", formData);
-        this.$router.push("/");
-        this.loading = false;
-      } catch (e) {
-        alert(e);
-        console.log(e);
-        this.loading = false;
-      }
-    },
-  },
-  computed: {
-    disabled() {
-      if (!this.email || !this.pass) {
-        return true;
-      }
-      return false;
-    },
-  },
-  components: { PreloaderApp },
+const store = useStore();
+const router = useRouter();
+
+const form = reactive({
+  email: "",
+  pass: "",
+});
+const loading = ref(false);
+
+const disabled = computed(() => !form.email || !form.pass);
+
+const submit = async () => {
+  loading.value = true;
+  try {
+    await store.dispatch("login", { email: form.email, pass: form.pass });
+    router.push("/");
+  } catch (error) {
+    ElMessage.error("Ошибка авторизации");
+    console.log(error);
+  } finally {
+    loading.value = false;
+  }
 };
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.auth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  width: 100%;
+  background: linear-gradient(180deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+}
+
+.auth__card {
+  width: 95%;
+  max-width: 400px;
+  background: var(--bg-surface-2);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.auth__logo {
+  background-color: rgb(253, 253, 253);
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.logo-auth {
+  width: 96px;
+  height: auto;
+}
+
+.auth__actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+</style>

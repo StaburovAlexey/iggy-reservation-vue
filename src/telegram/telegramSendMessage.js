@@ -1,10 +1,20 @@
 import { API, TELEGRAM_CHAT_ID } from "@/lib/telegramApi";
 
 export async function sendPushMessage(data, date) {
-  const text = `Новая бронь! Не проеби, там ${data.person} человек в ${data.time} на ${date}`;
-  // const text = 'теперь должно все работать, даже в закрытой группе'
+  if (!API || !TELEGRAM_CHAT_ID) {
+    console.warn(
+      "Телеграм токен или chat_id не заданы. Укажите переменные и повторите отправку."
+    );
+    return;
+  }
+
+  const text = `Новая бронь: ${data.time || "-"} (${date || "-"}
+Гость: ${data.name || "-"}
+Гостей: ${data.person || "-"}
+Телефон: ${data.tel || "-"}`;
+
   try {
-    const response = await fetch(API, {
+    await fetch(API, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -15,6 +25,6 @@ export async function sendPushMessage(data, date) {
       }),
     });
   } catch (error) {
-    throw error;
+    console.log(error);
   }
 }

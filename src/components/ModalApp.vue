@@ -1,109 +1,264 @@
 <template>
-  <div :id="`modal${numberTable}`" class="modal">
-    <ul class="collection with-header list-pull">
-      <li class="collection-item" v-for="res in table" :key="res.id">
-        <span>Время: {{ res.time }}</span
-        ><br />
-        <span>Телефон: {{ res.phone }}</span
-        ><br />
-        <span>Имя: {{ res.name }}</span>
-        <a class="secondary-content" @click="$emit('del', { id: res.id })"
-          ><i class="material-icons">delete</i></a
-        >
-      </li>
-    </ul>
-    <div class="modal-content">
-      <p class="number-table">{{ numberTable }}</p>
-      <div class="row row-modal">
-        <p class="col s6">Время:</p>
-        <div class="input-field col s6">
-          <input class="materialize-textarea" v-model="time" />
-        </div>
+  <el-dialog
+    v-model="visible"
+    :title="`Стол ${numberTable}`"
+    width="min(520px, 95vw)"
+    destroy-on-close
+  >
+    <div class="dialog-grid">
+      <div class="dialog-grid__left">
+        <div class="dialog-grid__subtitle">Текущие брони</div>
+        <el-empty v-if="!table.length" description="Записей пока нет" image="./parrot.webp" :image-size="120"/>
+        <el-timeline v-else>
+          <el-timeline-item
+            v-for="res in table"
+            :key="res.id"
+            :timestamp="res.time"
+            placement="top"
+          >
+            <div class="booking-card">
+              
+              <div class="booking-card__meta">
+                <span>Имя: {{ res.name || "-" }}</span>
+                <span>Гостей: {{ res.person || "-" }}</span>
+                <span>Телефон: {{ res.phone || "-" }}</span>
+              </div>
+              <div class="booking-card__user">
+                <el-avatar :size="32" :src="userAvatar(res)" class="booking-card__avatar">
+                  {{ userInitial(res) }}
+                </el-avatar>
+                <div class="booking-card__user-info">
+                  <div class="booking-card__user-name">{{ userName(res) }}</div>
+                  <div class="booking-card__user-label">{{ userEmailMasked(res) }}</div>
+                </div>
+              </div>
+              <el-button
+                type="danger"
+                size="small"
+                :loading="deletingId === res.id"
+                :disabled="deletingId === res.id"
+                @click="emitDelete(res.id)"
+              >
+                Удалить
+              </el-button>
+            </div>
+          </el-timeline-item>
+        </el-timeline>
       </div>
-      <div class="row row-modal">
-        <p class="col s6">Количество человек:</p>
-        <div class="input-field col s6">
-          <textarea class="materialize-textarea" v-model="person"></textarea>
-        </div>
-      </div>
-      <div class="row row-modal">
-        <p class="col s6">Имя:</p>
-        <div class="input-field col s6">
-          <textarea class="materialize-textarea" v-model="name"></textarea>
-        </div>
-      </div>
-      <div class="row row-modal">
-        <p class="col s6">Телефон:</p>
-        <div class="input-field col s6">
-          <textarea class="materialize-textarea" v-model="tel"></textarea>
-        </div>
+      <div class="dialog-grid__right">
+        <div class="dialog-grid__subtitle">Создать бронь</div>
+        <el-form :model="form" label-position="top" class="dialog-form">
+          <el-form-item label="Время">
+            <el-time-picker
+              v-model="form.time"
+              placeholder="Выберите время"
+              format="HH:mm"
+              value-format="HH:mm"
+              :editable="false"
+            />
+          </el-form-item>
+          <el-form-item label="Количество гостей">
+            <el-input v-model="form.person" placeholder="Например, 4" />
+          </el-form-item>
+          <el-form-item label="Имя">
+            <el-input v-model="form.name" placeholder="Имя гостя" />
+          </el-form-item>
+          <el-form-item label="Телефон">
+            <el-input v-model="form.tel" placeholder="+7..." />
+          </el-form-item>
+        </el-form>
       </div>
     </div>
-    <!-- <div v-if="numberTable !== 11 && numberTable !== 5">
-      <div class="modal-footer" v-if="table">
-        <button
-          type="button"
-          class="waves-effect waves-green btn-flat"
-          @click="$emit('del', { id: table.id })"
-        >
-          Удалить
-        </button>
-      </div>
-      <div class="modal-footer">
-        <button
-          type="button"
-          class="waves-effect waves-green btn-flat"
-          @click="$emit('creat', { time, person, name, tel, numTable })"
-        >
-          Записать
-        </button>
-      </div>
-    </div> -->
-    <div class="modal-footer">
-      <button
-        type="button"
-        class="waves-effect waves-green btn-flat"
-        @click="$emit('creat', { time, person, name, tel, numTable })"
-      >
-        Записать
-      </button>
-    </div>
-  </div>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="visible = false">Отменить</el-button>
+        <el-button type="primary" @click="emitCreate">Сохранить</el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
 
-<script>
-export default {
-  props: ["table", "numberTable"],
-  emits: ["del", "creat"],
-  data() {
-    return {
-      time: "",
-      person: "",
-      name: "",
-      tel: "",
-      numTable: `${this.numberTable}`, // передаем строку из числа в Number
-      loading: false,
-    };
+<script setup>
+import { computed, defineEmits, defineProps, reactive, ref, watch } from "vue";
+import { ElMessage } from "element-plus";
+
+const props = defineProps({
+  modelValue: {
+    type: Boolean,
+    default: false,
   },
-  mounted() {
-    var elems = document.querySelectorAll(".modal");
-    var instances = M.Modal.init(elems, {});
+  table: {
+    type: Array,
+    default: () => [],
   },
-  watch: {
-    table() {
-      this.time = this.table.time;
-      this.person = this.table.person;
-      this.name = this.table.name;
-      this.tel = this.table.phone;
-      // console.log("table", this.table);
-    },
+  numberTable: {
+    type: [Number, String],
+    default: "",
   },
-  methods: {
-    click() {
-      console.log("click");
-    },
-  },
+});
+
+const emit = defineEmits(["update:modelValue", "del", "creat"]);
+
+const form = reactive({
+  time: "",
+  person: "",
+  name: "",
+  tel: "",
+});
+
+const deletingId = ref(null);
+
+const visible = computed({
+  get: () => props.modelValue,
+  set: (value) => emit("update:modelValue", value),
+});
+
+const numTable = computed(() => String(props.numberTable));
+
+const resetForm = () => {
+  form.time = "";
+  form.person = "";
+  form.name = "";
+  form.tel = "";
 };
+
+const emitCreate = () => {
+  if (!form.time || !form.tel) {
+    ElMessage.warning("Укажите время и телефон");
+    return;
+  }
+  emit("creat", { ...form, numTable: numTable.value });
+  visible.value = false;
+};
+
+const emitDelete = (id) => {
+  deletingId.value = id;
+  emit("del", { id });
+};
+
+const userName = (res) => res?.user?.full_name || "Без имени";
+const userEmail = (res) => res?.user?.email || "Без email";
+const userEmailMasked = (res) => {
+  const email = res?.user?.email;
+  if (!email) return "Нет почты";
+  const prefix = email.slice(0, 5);
+  return email.length > 5 ? `${prefix}...` : prefix;
+};
+const userAvatar = (res) => res?.user?.avatar_url || "";
+const userInitial = (res) => userName(res).slice(0, 1).toUpperCase();
+
+watch(
+  () => props.table,
+  () => {
+    resetForm();
+    deletingId.value = null;
+  },
+  { deep: true, immediate: true }
+);
+
+watch(
+  () => props.modelValue,
+  (isOpen) => {
+    if (!isOpen) {
+      deletingId.value = null;
+    } else {
+      resetForm();
+    }
+  }
+);
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.dialog-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  min-height: 320px;
+}
+
+.dialog-grid__left,
+.dialog-grid__right {
+  background: var(--bg-surface);
+  padding: 12px;
+  border-radius: 8px;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.dialog-grid__subtitle {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.booking-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.booking-card__user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.booking-card__avatar {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.booking-card__user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.booking-card__user-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.booking-card__user-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.booking-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.dialog-form {
+  background: var(--bg-surface);
+}
+
+.dialog-footer {
+  display: inline-flex;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .dialog-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dialog-grid__left,
+  .dialog-grid__right {
+    padding: 10px;
+  }
+
+  :deep(.el-dialog__header),
+  :deep(.el-dialog__body) {
+    padding: 12px;
+  }
+
+  .dialog-footer {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+}
+</style>

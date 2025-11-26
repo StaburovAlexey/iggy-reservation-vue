@@ -1,67 +1,69 @@
 <template>
-  <footer class="page-footer indigo darken-3">
-    <div class="container black-text row">
-      <p class="col s6 white-text">Выбери дату:</p>
-      <div class="input-field col s6">
-        <i class="material-icons prefix white-text">event</i>
-        <input
-          id="icon_prefix"
-          ref="datepicker"
-          class="datepicker white-text center"
-          v-model="date"
-          type="text"
-          @change="updateDate"
-        />
-      </div>
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__title">Выберите дату:</div>
+      <el-date-picker
+        v-model="date"
+        type="date"
+        placeholder="Дата бронирования"
+        format="DD.MM.YY"
+        value-format="DD.MM.YY"
+        :clearable="false"
+        :editable="false"
+        style="width: 150px;"
+        @change="handleDateChange"
+      />
     </div>
   </footer>
 </template>
 
-<script>
-import M from "materialize-css/dist/js/materialize.min";
-export default {
-  data() {
-    return {
-      date: "",
-    };
-  },
-  watch: {},
-  async mounted() {
-    const inst = await M.Datepicker.init(this.$refs.datepicker, {
-      format: "dd.mm.yy",
-      autoClose: true,
-      firstDay: 1,
-      // container:
-    });
-    inst.setDate(new Date());
-    this.date = this.formatDate(new Date());
-    this.$store.commit("setDate", this.date);
-    try {
-      await this.$store.dispatch("fetchInfo");
-    } catch (e) {
-      console.log(e);
-    }
-  },
-  methods: {
-    async updateDate() {
-      this.date = this.$refs.datepicker.value;
-      try {
-        this.$store.commit("setDate", this.date);
-        await this.$store.dispatch("fetchInfo");
-      } catch (e) {
-        console.log(e);
-      }
-    },
-    formatDate(date) {
-      const options = {
-        day: "2-digit",
-        month: "2-digit",
-        year: "2-digit",
-      };
-      return new Intl.DateTimeFormat("ru-RU", options).format(date);
-    },
-  },
+<script setup>
+import { onMounted, ref } from "vue";
+import { useStore } from "vuex";
+
+const store = useStore();
+const date = ref("");
+
+const formatDate = (value) => {
+  const options = { day: "2-digit", month: "2-digit", year: "2-digit" };
+  return new Intl.DateTimeFormat("ru-RU", options).format(value);
 };
+
+const handleDateChange = async (value) => {
+  if (!value) return;
+  try {
+    store.commit("setDate", value);
+    await store.dispatch("fetchInfo");
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+onMounted(() => {
+  const today = formatDate(new Date());
+  date.value = today;
+  store.commit("setDate", today);
+  store.dispatch("fetchInfo").catch((error) => console.log(error));
+});
 </script>
 
-<style lang="scss"></style>
+<style lang="scss" scoped>
+.footer {
+  margin-top: auto;
+  background: var(--bg-navbar);
+  color: var(--text-primary);
+  padding: 8px 12px 10px;
+}
+
+.footer__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.footer__title {
+  font-weight: 600;
+}
+</style>
