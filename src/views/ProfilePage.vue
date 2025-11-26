@@ -160,7 +160,7 @@ const sendInvite = async () => {
       email: inviteEmail.value,
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: `https://alexey-staburov.ru/magic-link`,
+        emailRedirectTo: `https://alexey-staburov.ru/#/magic-link`,
       },
     });
     if (error) throw error;

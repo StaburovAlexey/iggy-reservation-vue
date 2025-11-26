@@ -86,7 +86,6 @@ onMounted(() => {
 
 <style scoped>
 .magic-page {
-  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -97,7 +96,7 @@ onMounted(() => {
 
 .magic-card {
   max-width: 420px;
-  width: 100%;
+  width: 95%;
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: 12px;
