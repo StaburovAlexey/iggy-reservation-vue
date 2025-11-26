@@ -47,7 +47,7 @@
         </g>
         <g class="hall" @click="openRoom" v-if="isRoomReserved">
           <rect x="0" y="0" width="100%" height="120" fill="url(#hallGradient)" />
-          <text x="50%" y="60" text-anchor="middle" font-size="22" fill="#0b1220" font-weight="700">
+          <text x="50%" y="60" text-anchor="middle" font-size="22" fill="#fff" font-weight="700">
             Комната занята
           </text>
         </g>
@@ -86,6 +86,8 @@ const reservations = ref([]);
 
 const date = computed(() => store.getters.date);
 const storeReservations = computed(() => store.getters.reservation || []);
+const currentUser = computed(() => store.getters.user || {});
+const userId = computed(() => currentUser.value?.id || "");
 
 const tables = reactive({
   table_1: [],
@@ -171,14 +173,18 @@ const delReserve = async ({ id }) => {
 
 const creatReserve = async (data) => {
   const targetTable = data.numTable || selectedTable.value;
-  if (!data.time || !data.person) {
-    ElMessage.warning("Заполните время и количество гостей");
+  if (!data.time || !data.tel) {
+    ElMessage.warning("Заполните время и телефон");
+    return;
+  }
+  if (!userId.value) {
+    ElMessage.error("Не удалось определить пользователя и передать id");
     return;
   }
   loading.value = true;
   try {
     const status = await store.dispatch("creatInfo", {
-      data: { ...data, numTable: targetTable },
+      data: { ...data, numTable: targetTable, userId: userId.value },
     });
     if (status === 201 || status === "201") {
       await fetchReservations();

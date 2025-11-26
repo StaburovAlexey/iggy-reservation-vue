@@ -8,7 +8,7 @@
     <div class="dialog-grid">
       <div class="dialog-grid__left">
         <div class="dialog-grid__subtitle">Текущие брони</div>
-        <el-empty v-if="!table.length" description="Пока нет броней" />
+        <el-empty v-if="!table.length" description="Записей пока нет" image="./parrot.webp" :image-size="120"/>
         <el-timeline v-else>
           <el-timeline-item
             v-for="res in table"
@@ -17,10 +17,20 @@
             placement="top"
           >
             <div class="booking-card">
-              <div class="booking-card__name">{{ res.name || "Без имени" }}</div>
+              
               <div class="booking-card__meta">
+                <span>Имя: {{ res.name || "-" }}</span>
                 <span>Гостей: {{ res.person || "-" }}</span>
                 <span>Телефон: {{ res.phone || "-" }}</span>
+              </div>
+              <div class="booking-card__user">
+                <el-avatar :size="32" :src="userAvatar(res)" class="booking-card__avatar">
+                  {{ userInitial(res) }}
+                </el-avatar>
+                <div class="booking-card__user-info">
+                  <div class="booking-card__user-name">{{ userName(res) }}</div>
+                  <div class="booking-card__user-label">{{ userEmail(res) }}</div>
+                </div>
               </div>
               <el-button
                 type="danger"
@@ -36,10 +46,16 @@
         </el-timeline>
       </div>
       <div class="dialog-grid__right">
-        <div class="dialog-grid__subtitle">Новая бронь</div>
+        <div class="dialog-grid__subtitle">Создать бронь</div>
         <el-form :model="form" label-position="top" class="dialog-form">
           <el-form-item label="Время">
-            <el-input v-model="form.time" placeholder="Например, 20:00" />
+            <el-time-picker
+              v-model="form.time"
+              placeholder="Выберите время"
+              format="HH:mm"
+              value-format="HH:mm"
+              :editable="false"
+            />
           </el-form-item>
           <el-form-item label="Количество гостей">
             <el-input v-model="form.person" placeholder="Например, 4" />
@@ -55,7 +71,7 @@
     </div>
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="visible = false">Отмена</el-button>
+        <el-button @click="visible = false">Отменить</el-button>
         <el-button type="primary" @click="emitCreate">Сохранить</el-button>
       </span>
     </template>
@@ -64,6 +80,7 @@
 
 <script setup>
 import { computed, defineEmits, defineProps, reactive, ref, watch } from "vue";
+import { ElMessage } from "element-plus";
 
 const props = defineProps({
   modelValue: {
@@ -106,6 +123,10 @@ const resetForm = () => {
 };
 
 const emitCreate = () => {
+  if (!form.time || !form.tel) {
+    ElMessage.warning("Укажите время и телефон");
+    return;
+  }
   emit("creat", { ...form, numTable: numTable.value });
   visible.value = false;
 };
@@ -115,10 +136,14 @@ const emitDelete = (id) => {
   emit("del", { id });
 };
 
+const userName = (res) => res?.user?.full_name || res?.name || "Без имени";
+const userEmail = (res) => res?.user?.email || "Без email";
+const userAvatar = (res) => res?.user?.avatar_url || "";
+const userInitial = (res) => userName(res).slice(0, 1).toUpperCase();
+
 watch(
   () => props.table,
-  (value) => {
-    // keep form empty even if there are existing bookings
+  () => {
     resetForm();
     deletingId.value = null;
   },
@@ -165,9 +190,31 @@ watch(
   gap: 4px;
 }
 
-.booking-card__name {
+.booking-card__user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.booking-card__avatar {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.booking-card__user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.booking-card__user-name {
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.booking-card__user-label {
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 
 .booking-card__meta {

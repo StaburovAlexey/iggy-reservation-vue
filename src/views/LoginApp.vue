@@ -75,7 +75,7 @@ const submit = async () => {
 }
 
 .auth__card {
-  width: 100%;
+  width: 95%;
   max-width: 400px;
   background: var(--bg-surface-2);
   color: var(--text-primary);
@@ -83,6 +83,7 @@ const submit = async () => {
 }
 
 .auth__logo {
+  background-color: rgb(253, 253, 253);
   text-align: center;
   margin-bottom: 12px;
 }
