@@ -189,9 +189,9 @@ const creatReserve = async (data) => {
     if (status === 201 || status === "201") {
       await fetchReservations();
       ElMessage.success("Бронь добавлена");
-      // sendPushMessage({ ...data, numTable: targetTable }, date.value).catch(
-      //   (error) => console.log(error)
-      // );
+      sendPushMessage({ ...data, numTable: targetTable }, date.value).catch(
+        (error) => console.log(error)
+      );
     } else {
       ElMessage.error(status);
     }
