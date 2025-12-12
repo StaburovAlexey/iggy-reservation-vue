@@ -10,7 +10,6 @@
     "lint": "eslint . --ext .js,.vue"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.3",
     "element-plus": "^2.11.8",
     "normalize.css": "^8.0.1",
     "pinia": "^2.1.7",

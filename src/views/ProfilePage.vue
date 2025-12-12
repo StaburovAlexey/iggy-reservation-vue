@@ -66,7 +66,7 @@
         <el-card v-if="canInvite" class="invite-card" shadow="never">
           <div class="invite-card__header">
             <div>
-              <h3 class="invite-card__title">Пригласить пользователя</h3>
+              <h3 class="invite-card__title">Зарегистрировать пользователя</h3>
               <p class="invite-card__subtitle">
                 Отправьте приглашение на e-mail, чтобы создать аккаунт.
               </p>
@@ -74,18 +74,34 @@
           </div>
           <div class="invite-card__form">
             <el-input
-              v-model="inviteEmail"
+              v-model="newUser.email"
               type="email"
               placeholder="email пользователя"
               :disabled="sendingInvite"
             />
+            <el-input
+              v-model="newUser.name"
+              placeholder="Имя"
+              :disabled="sendingInvite"
+            />
+            <el-input
+              v-model="newUser.password"
+              type="password"
+              placeholder="Пароль"
+              :disabled="sendingInvite"
+              show-password
+            />
+            <el-select v-model="newUser.role" placeholder="Роль" style="min-width: 140px" :disabled="sendingInvite">
+              <el-option label="Админ" value="admin" />
+              <el-option label="Пользователь" value="user" />
+            </el-select>
             <el-button
               type="primary"
               :loading="sendingInvite"
               :disabled="sendingInvite"
               @click="sendInvite"
             >
-              Отправить
+              Создать
             </el-button>
           </div>
         </el-card>
@@ -109,8 +125,13 @@ const router = useRouter();
 const loadingProfile = ref(true);
 const saving = ref(false);
 const avatarFile = ref(null);
-const inviteEmail = ref("");
 const sendingInvite = ref(false);
+const newUser = reactive({
+  email: "",
+  name: "",
+  password: "",
+  role: "user",
+});
 const form = reactive({
   fullName: "",
   email: "",
@@ -123,8 +144,7 @@ const original = reactive({
   avatarUrl: "",
 });
 
-const adminEmails = ["gilbertfrost@yandex.ru"];
-const canInvite = computed(() => adminEmails.includes((authStore.user?.email || authStore.user?.login || "").toLowerCase()));
+const canInvite = computed(() => authStore.user?.role === "admin");
 
 const canSave = computed(
   () =>
@@ -147,13 +167,35 @@ const resetForm = () => {
 
 const sendInvite = async () => {
   if (!canInvite.value) return;
-  if (!inviteEmail.value) {
-    ElMessage.warning("Укажите email пользователя");
+  if (!newUser.email || !newUser.password) {
+    ElMessage.warning("Укажите email и пароль");
     return;
   }
   sendingInvite.value = true;
-  ElMessage.warning("Приглашения через новый API пока не реализованы.");
-  sendingInvite.value = false;
+  try {
+    const payload = {
+      login: newUser.email,
+      password: newUser.password,
+      name: newUser.name || "",
+      role: newUser.role || "user",
+      avatar: null,
+    };
+    const resp = await api.registerUser(payload);
+    if (resp?.user) {
+      ElMessage.success("Пользователь создан");
+      newUser.email = "";
+      newUser.name = "";
+      newUser.password = "";
+      newUser.role = "user";
+    } else {
+      ElMessage.error("Не удалось создать пользователя");
+    }
+  } catch (error) {
+    console.log(error);
+    ElMessage.error("Ошибка при создании пользователя");
+  } finally {
+    sendingInvite.value = false;
+  }
 };
 
 const loadUser = async () => {

@@ -127,6 +127,7 @@ export const api = {
     return result;
   },
   logout: () => clearToken(),
+  registerUser: (payload) => apiClient.post("/registration", { body: payload }),
   getTables: (date) => apiClient.get("/tables", { params: date ? { date } : undefined }),
   createTable: (payload) => apiClient.post("/tables/add", { body: payload }),
   deleteTable: (id) => apiClient.delete(`/tables/delete/${id}`),

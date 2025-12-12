@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { supabase } from "@/lib/supabaseClient";
+import { api } from "@/api/client";
 
 export const useDataStore = defineStore("dataBase", {
   state: () => ({
@@ -14,51 +14,38 @@ export const useDataStore = defineStore("dataBase", {
       this.date = date || "";
     },
     async fetchInfo() {
-      const { data, error } = await supabase
-        .from("tables")
-        .select(
-          `
-            *,
-            user:profiles (
-              email,
-              full_name,
-              avatar_url
-            )
-          `
-        )
-        .eq("date", this.date);
-      if (error) {
+      const resp = await api.getTables(this.date || undefined);
+      const items = resp?.items || resp || [];
+      this.setReserve(items);
+      return items;
+    },
+
+    async delInfo({ id }) {
+      const cleanId = typeof id === "string" ? id.replace(/^eq\./, "") : id;
+      try {
+        const resp = await api.deleteTable(cleanId);
+        return resp?.success ? 204 : resp?.status || resp;
+      } catch (error) {
+        console.log("del", error);
         throw error;
       }
-      this.setReserve(data || []);
-      return data;
-    },
-  
-    async delInfo({ id }) {
-         const cleanId = typeof id === "string" ? id.replace(/^eq\./, "") : id;
-      const { error, status } = await supabase
-        .from("tables")
-        .delete()
-        .eq("id", cleanId);
-      if (error) {
-        console.log("del", error);
-      }
-      return status;
     },
     async creatInfo({ data }) {
-      const { error, status } = await supabase.from("tables").insert({
+      const payload = {
         table: `${data.numTable}`,
         name: data.name,
         person: data.person,
         time: data.time,
         phone: data.tel,
-        user_id: data.userId,
         date: this.date,
-      });
-      if (error) {
+      };
+      try {
+        await api.createTable(payload);
+        return 201;
+      } catch (error) {
         console.log(error);
+        throw error;
       }
-      return status;
     },
   },
 });
