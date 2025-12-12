@@ -1,55 +1,27 @@
-# GitHub Actions workflow для деплоя по SSH
+# Deploy frontend via SSH (rsync)
 #
-# 1) В GitHub: Repo → Settings → Secrets and variables → Actions → New repository secret
-#    Добавьте:
-#      SSH_HOST   = IP/домен сервера
-#      SSH_PORT   = 22
-#      SSH_USER   = deploy
-#      SSH_KEY    = приватный ключ (тот, что скрипт показал в консоли)
+# GitHub Secrets (Repo → Settings → Secrets and variables → Actions):
+#   SSH_HOST     = IP/домен сервера (например 79.174.85.173)
+#   SSH_PORT     = 22
+#   SSH_USER     = deploy
+#   SSH_KEY_B64  = base64 приватного ключа (в одну строку)
 #
-# 2) Для фронтенда:
-#    - Этот workflow собирает проект (npm ci + npm run build) и заливает папку dist/ в папку на сервере.
-#    - Путь по умолчанию: /var/www/<DOMAIN>/html
+# Как получить SSH_KEY_B64 на сервере:
+#   base64 -w0 /home/deploy/.ssh/gh_actions_ed25519
+#   (если -w0 нет) base64 /home/deploy/.ssh/gh_actions_ed25519 | tr -d '\n'
 #
-# 3) Для backend (Node + pm2):
-#    - Workflow rsync'ом заливает проект в /srv/app
-#    - Затем делает npm ci и перезапускает pm2
-#    - Важно: в шаге "pm2 start ..." укажите правильный entry-файл, если он не server.js
-#
-# 4) Как подключить:
-#    - На своём ПК в репозитории создайте файл: .github/workflows/deploy.yml
-#    - Скопируйте туда содержимое этого файла (или скачайте /tmp/deploy.yml с сервера через scp)
-#    - Commit + push в ветку main — workflow запустится автоматически.
+# Путь назначения должен совпадать с nginx root:
+#   /var/www/reserve.dev.alexeystaburov.ru/html
 
-name: Deploy via SSH
+name: Deploy frontend via SSH
 
 on:
   push:
     branches: ["new-api"]
   workflow_dispatch:
-    inputs:
-      target:
-        description: "Что деплоим"
-        type: choice
-        required: true
-        default: frontend
-        options:
-          - frontend
-          - backend
 
 env:
-  # FRONTEND_REMOTE_DIR — куда класть dist/
-  # Можно поменять, если у вас другая структура
   FRONTEND_REMOTE_DIR: "/var/www/reserve.dev.alexeystaburov.ru/html"
-
-  # BACKEND_REMOTE_DIR — куда класть backend проект
-  BACKEND_REMOTE_DIR: "/srv/app"
-
-  # PM2_NAME — имя процесса в pm2
-  PM2_NAME: "app"
-
-  # BACKEND_ENTRY — entry-файл backend (замените под свой проект)
-  BACKEND_ENTRY: "src/index.js"
 
 jobs:
   deploy:
@@ -57,54 +29,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p ${{ secrets.SSH_PORT }} -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-
-      # ---------- FRONTEND ----------
       - uses: actions/setup-node@v4
-        if: ${{ github.event_name == 'push' || inputs.target == 'frontend' }}
         with:
           node-version: 20
           cache: npm
 
-      - name: Build frontend
-        if: ${{ github.event_name == 'push' || inputs.target == 'frontend' }}
+      - name: Build
         run: |
+          set -euxo pipefail
           npm ci
           npm run build:dev
+          test -d dist
+          ls -la dist
 
-      - name: Upload dist (frontend)
-        if: ${{ github.event_name == 'push' || inputs.target == 'frontend' }}
+      - name: Setup SSH (base64 key)
         run: |
-          rsync -az --delete -e "ssh -p ${{ secrets.SSH_PORT }}" \
-            dist/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ env.FRONTEND_REMOTE_DIR }}/
+          set -euxo pipefail
+          mkdir -p ~/.ssh
 
-      # ---------- BACKEND ----------
-      - name: Upload backend project
-        if: ${{ inputs.target == 'backend' }}
+          echo "${{ secrets.SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_ed25519
+          tr -d '\r' < ~/.ssh/id_ed25519 > ~/.ssh/id_ed25519.tmp && mv ~/.ssh/id_ed25519.tmp ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          ssh-keyscan -p ${{ secrets.SSH_PORT }} -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+          # Проверка, что ключ читается (без вывода приватных данных)
+          ssh-keygen -lf ~/.ssh/id_ed25519
+
+      - name: Upload dist
         run: |
-          rsync -az --delete \
-            --exclude node_modules \
-            --exclude .git \
+          set -euxo pipefail
+
+          # Проверка, что на сервере папка существует и доступна на запись
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "set -eux; mkdir -p '${{ env.FRONTEND_REMOTE_DIR }}'; ls -la '${{ env.FRONTEND_REMOTE_DIR }}'; touch '${{ env.FRONTEND_REMOTE_DIR }}/.write_test' && rm '${{ env.FRONTEND_REMOTE_DIR }}/.write_test'"
+
+          rsync -az --delete --stats --itemize-changes \
             -e "ssh -p ${{ secrets.SSH_PORT }}" \
-            ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ env.BACKEND_REMOTE_DIR }}/
-
-      - name: Install & restart backend (pm2)
-        if: ${{ inputs.target == 'backend' }}
-        run: |
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            set -e
-            cd "${BACKEND_REMOTE_DIR}"
-            if ! command -v node >/dev/null 2>&1; then
-              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-              sudo apt-get install -y nodejs
-            fi
-            sudo npm i -g pm2
-            npm ci
-            pm2 start "${BACKEND_ENTRY}" --name "${PM2_NAME}" --update-env || pm2 restart "${PM2_NAME}" --update-env
-            pm2 save
-          EOF
+            dist/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ env.FRONTEND_REMOTE_DIR }}/
