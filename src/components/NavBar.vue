@@ -60,9 +60,9 @@ const THEME_KEY = "iggy-theme";
 const theme = ref(localStorage.getItem(THEME_KEY) || "dark");
 
 const userName = computed(
-  () => user.value?.user_metadata?.full_name || user.value?.email || "??>‘?ú??ø‘'ç>‘?"
+  () => user.value?.user_metadata?.full_name || user.value?.email || "Пользователь"
 );
-const userEmail = computed(() => user.value?.email || "?ç‘' e-mail");
+const userEmail = computed(() => user.value?.email || "Нет e-mail");
 const avatarUrl = computed(() => user.value?.user_metadata?.avatar_url || "");
 const avatarFallback = computed(() =>
   userName.value ? userName.value.slice(0, 1).toUpperCase() : "U"
@@ -83,7 +83,7 @@ watch(
 );
 
 const nextThemeLabel = computed(() =>
-  theme.value === "light" ? "ö?ç‘'>ø‘? ‘'ç?ø" : "÷ç??ø‘? ‘'ç?ø"
+  theme.value === "light" ? "Светлая тема" : "Темная тема"
 );
 
 const refresh = () => {
