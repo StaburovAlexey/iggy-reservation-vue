@@ -76,7 +76,6 @@ import { computed, reactive, ref, watch, defineExpose } from "vue";
 import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
 import ModalApp from "./ModalApp.vue";
-import { sendPushMessage } from "@/telegram/telegramSendMessage";
 import { useDataStore } from "@/store/dataBase";
 import { useAuthStore } from "@/store/auth";
 
@@ -192,9 +191,6 @@ const creatReserve = async (data) => {
     if (status === 201 || status === "201") {
       await fetchReservations();
       ElMessage.success("Бронь добавлена");
-      // sendPushMessage({ ...data, numTable: targetTable }, date.value).catch(
-      //   (error) => console.log(error)
-      // );
     } else {
       ElMessage.error(status);
     }
