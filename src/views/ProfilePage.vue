@@ -9,7 +9,7 @@
         <div class="profile-card__header">
           <div>
             <h2 class="profile-card__title">Профиль <el-button style="float: right;" @click="goHome">На главную</el-button></h2>
-            <p class="profile-card__subtitle">Обновите имя, e-mail или пароль.</p>
+            <p class="profile-card__subtitle">Обновите имя, e-mail и аватар.</p>
           </div>
         </div>
         <el-form
@@ -48,11 +48,10 @@
               autocomplete="new-password"
               type="password"
               show-password
-              placeholder="Оставьте пустым, если не нужно менять"
+              placeholder="Оставьте пустым, если менять не нужно"
             />
           </el-form-item>
           <div class="profile-form__actions">
-            
             <el-button @click="resetForm" :disabled="saving || loadingProfile">Сбросить</el-button>
             <el-button
               type="primary"
@@ -67,9 +66,9 @@
         <el-card v-if="canInvite" class="invite-card" shadow="never">
           <div class="invite-card__header">
             <div>
-              <h3 class="invite-card__title">Добавить пользователя</h3>
+              <h3 class="invite-card__title">Пригласить пользователя</h3>
               <p class="invite-card__subtitle">
-                Отправьте приглашение по электронной почте новому пользователю.
+                Отправьте приглашение на e-mail, чтобы создать аккаунт.
               </p>
             </div>
           </div>
@@ -77,7 +76,7 @@
             <el-input
               v-model="inviteEmail"
               type="email"
-              placeholder="email получателя"
+              placeholder="email пользователя"
               :disabled="sendingInvite"
             />
             <el-button
@@ -90,7 +89,6 @@
             </el-button>
           </div>
         </el-card>
-
       </el-card>
     </div>
   </div>
@@ -126,7 +124,7 @@ const original = reactive({
 });
 
 const adminEmails = ["gilbertfrost@yandex.ru"];
-const canInvite = computed(() => adminEmails.includes((authStore.user?.email || "").toLowerCase()));
+const canInvite = computed(() => adminEmails.includes((authStore.user?.email || authStore.user?.login || "").toLowerCase()));
 
 const canSave = computed(
   () =>
@@ -150,7 +148,7 @@ const resetForm = () => {
 const sendInvite = async () => {
   if (!canInvite.value) return;
   if (!inviteEmail.value) {
-    ElMessage.warning("گ?گَگّگگٌ‘'گç email گُگ?گ>‘?‘طگّ‘'گçگ>‘?");
+    ElMessage.warning("Укажите email пользователя");
     return;
   }
   sendingInvite.value = true;
@@ -162,7 +160,7 @@ const loadUser = async () => {
   loadingProfile.value = true;
   try {
     const currentUser = authStore.user;
-    if (!currentUser || !currentUser.email) {
+    if (!currentUser || (!currentUser.email && !currentUser.login)) {
       throw new Error("Требуется авторизация");
     }
     original.fullName = currentUser.user_metadata?.full_name || currentUser.name || "";
@@ -172,7 +170,7 @@ const loadUser = async () => {
     authStore.setUser(currentUser);
   } catch (error) {
     console.log(error);
-    ElMessage.error("Не удалось загрузить профиль");
+    ElMessage.error("Произошла ошибка загрузки профиля");
     router.push("/login");
   } finally {
     loadingProfile.value = false;
@@ -211,10 +209,10 @@ const saveProfile = async () => {
     original.avatarUrl = updatedUser.user_metadata?.avatar_url || updatedUser.avatar || "";
     resetForm();
     authStore.setUser(updatedUser);
-    ElMessage.success("Профиль обновлен");
+    ElMessage.success("Профиль обновлён");
   } catch (error) {
     console.log(error);
-    ElMessage.error("Не удалось сохранить профиль");
+    ElMessage.error("Произошла ошибка сохранения профиля");
   } finally {
     saving.value = false;
   }

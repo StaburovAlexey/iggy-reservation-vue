@@ -1,5 +1,7 @@
-import { supabase } from "@/lib/supabaseClient";
 import { createRouter, createWebHistory } from "vue-router";
+import pinia from "@/store";
+import { useAuthStore } from "@/store/auth";
+import { getToken } from "@/api/client";
 
 const routes = [
   {
@@ -52,17 +54,18 @@ const router = createRouter({
   routes,
 });
 
-async function getUser(next) {
-  let localUser = await supabase.auth.getSession();
-  if (localUser.data.session == null) {
-    next("/login");
-  } else {
-    next();
-  }
-}
-router.beforeEach((to, from, next) => {
+const authStore = useAuthStore(pinia);
+
+router.beforeEach((to, _from, next) => {
   if (to.meta.auth) {
-    getUser(next);
+    const token = getToken();
+    if (token) {
+      next();
+    } else if (authStore.isAuthenticated) {
+      next();
+    } else {
+      next("/login");
+    }
   } else {
     next();
   }

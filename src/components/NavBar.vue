@@ -20,10 +20,10 @@
             </div>
           </el-dropdown-item>
           <el-dropdown-item divided @click="editProfile">
-            Редактировать профиль
+            Профиль
           </el-dropdown-item>
           <el-dropdown-item @click="toggleTheme">
-            Сменить тему: {{ nextThemeLabel }}
+            Тема: {{ nextThemeLabel }}
           </el-dropdown-item>
           <el-dropdown-item divided @click="logout">
             Выйти из аккаунта
@@ -35,7 +35,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch, defineEmits } from "vue";
+import { computed, ref, watch, defineEmits } from "vue";
 import { useRouter } from "vue-router";
 import { ArrowDown } from "@element-plus/icons-vue";
 import { storeToRefs } from "pinia";
@@ -50,22 +50,23 @@ const { reservation } = storeToRefs(dataStore);
 const { user } = storeToRefs(authStore);
 
 const reservations = computed(() => reservation.value || []);
-const isRoomReserved = computed(() =>
-  reservations.value.some((item) => item.table === "12")
-);
+const isRoomReserved = computed(() => reservations.value.some((item) => item.table === "12"));
 
 const router = useRouter();
 const THEME_KEY = "iggy-theme";
 const theme = ref(localStorage.getItem(THEME_KEY) || "dark");
 
 const userName = computed(
-  () => user.value?.user_metadata?.full_name || user.value?.email || "Пользователь"
+  () =>
+    user.value?.user_metadata?.full_name ||
+    user.value?.name ||
+    user.value?.login ||
+    user.value?.email ||
+    "Пользователь"
 );
-const userEmail = computed(() => user.value?.email || "Нет e-mail");
-const avatarUrl = computed(() => user.value?.user_metadata?.avatar_url || "");
-const avatarFallback = computed(() =>
-  userName.value ? userName.value.slice(0, 1).toUpperCase() : "U"
-);
+const userEmail = computed(() => user.value?.email || user.value?.login || "нет e-mail");
+const avatarUrl = computed(() => user.value?.avatar || user.value?.user_metadata?.avatar_url || "");
+const avatarFallback = computed(() => (userName.value ? userName.value.slice(0, 1).toUpperCase() : "U"));
 
 const applyTheme = (value) => {
   const root = document.documentElement;
@@ -82,7 +83,7 @@ watch(
 );
 
 const nextThemeLabel = computed(() =>
-  theme.value === "light" ? "Светлая тема" : "Темная тема"
+  theme.value === "light" ? "Тёмная" : "Светлая"
 );
 
 const refresh = () => {
