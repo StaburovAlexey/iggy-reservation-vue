@@ -5,20 +5,20 @@
 #   SSH_PORT          = 22
 #   SSH_USER          = deploy
 #   SSH_KEY_B64       = base64 приватного ключа (в одну строку)
+#   TG_BOT_TOKEN      = токен Telegram бота (BotFather)
+#   TG_CHAT_ID        = chat_id куда слать уведомления
 #
-# (опционально для сборки) FRONTEND_ENV_B64 = base64 содержимого .env (в одну строку)
+# (Опционально для сборки) FRONTEND_ENV_B64 = base64 содержимого .env (в одну строку)
 #   - Если Secret FRONTEND_ENV_B64 задан, workflow создаст файл .env перед сборкой.
 #   - Для Vite переменные должны быть с префиксом VITE_ (иначе они не попадут в клиентский код).
 #
-# Как получить SSH_KEY_B64 на сервере:
-#   base64 -w0 /home/deploy/.ssh/gh_actions_ed25519
-#   (если -w0 нет) base64 /home/deploy/.ssh/gh_actions_ed25519 | tr -d '
-'
+# Как получить SSH_KEY_B64 на сервере (одной строкой):
+#   openssl base64 -A -in /home/deploy/.ssh/gh_actions_ed25519
+#   (альтернатива) base64 -w0 /home/deploy/.ssh/gh_actions_ed25519
 #
-# Как получить FRONTEND_ENV_B64 (делайте на своём ПК, где есть ваш .env):
-#   base64 -w0 .env
-#   (если -w0 нет) base64 .env | tr -d '
-'
+# Как получить FRONTEND_ENV_B64 на своём ПК (одной строкой):
+#   openssl base64 -A -in .env
+#   (альтернатива) base64 -w0 .env
 #
 # Путь назначения должен совпадать с nginx root:
 #   /var/www/reserve.dev.alexeystaburov.ru/html
@@ -49,8 +49,7 @@ jobs:
         run: |
           set -euxo pipefail
           echo "${{ secrets.FRONTEND_ENV_B64 }}" | base64 -d > .env
-          tr -d '
-' < .env > .env.tmp && mv .env.tmp .env
+          tr -d '\r' < .env > .env.tmp && mv .env.tmp .env
           echo ".env создан (первые строки):"
           head -n 5 .env | sed 's/=.*/=<hidden>/'
 
@@ -58,7 +57,7 @@ jobs:
         run: |
           set -euxo pipefail
           npm ci
-          npm run build
+          npm run build:dev
           test -d dist
           ls -la dist
 
@@ -68,8 +67,7 @@ jobs:
           mkdir -p ~/.ssh
 
           echo "${{ secrets.SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_ed25519
-          tr -d '
-' < ~/.ssh/id_ed25519 > ~/.ssh/id_ed25519.tmp && mv ~/.ssh/id_ed25519.tmp ~/.ssh/id_ed25519
+          tr -d '\r' < ~/.ssh/id_ed25519 > ~/.ssh/id_ed25519.tmp && mv ~/.ssh/id_ed25519.tmp ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
           ssh-keyscan -p ${{ secrets.SSH_PORT }} -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
@@ -81,3 +79,27 @@ jobs:
           ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}             "set -eux; mkdir -p '${{ env.FRONTEND_REMOTE_DIR }}'; ls -la '${{ env.FRONTEND_REMOTE_DIR }}'; touch '${{ env.FRONTEND_REMOTE_DIR }}/.write_test' && rm '${{ env.FRONTEND_REMOTE_DIR }}/.write_test'"
 
           rsync -az --delete --stats --itemize-changes             -e "ssh -p ${{ secrets.SSH_PORT }}"             dist/ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ env.FRONTEND_REMOTE_DIR }}/
+
+      - name: Notify Telegram (success)
+        if: success()
+        run: |
+          set -e
+          MSG="✅ Deploy OK
+          repo: $GITHUB_REPOSITORY
+          branch: $GITHUB_REF_NAME
+          commit: $GITHUB_SHA
+          actor: $GITHUB_ACTOR
+          run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          curl -sS -X POST "https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMessage"             -d "chat_id=${{ secrets.TG_CHAT_ID }}"             -d "text=$MSG" >/dev/null
+
+      - name: Notify Telegram (failure)
+        if: failure()
+        run: |
+          set -e
+          MSG="❌ Deploy FAILED
+          repo: $GITHUB_REPOSITORY
+          branch: $GITHUB_REF_NAME
+          commit: $GITHUB_SHA
+          actor: $GITHUB_ACTOR
+          run: https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          curl -sS -X POST "https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMessage"             -d "chat_id=${{ secrets.TG_CHAT_ID }}"             -d "text=$MSG" >/dev/null
