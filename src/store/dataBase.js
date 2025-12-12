@@ -1,25 +1,30 @@
+import { defineStore } from "pinia";
 import { supabase } from "@/lib/supabaseClient";
 
-export default {
-  state: {
+export const useDataStore = defineStore("dataBase", {
+  state: () => ({
     reservation: [],
     date: "",
-  },
+  }),
   actions: {
-    async fetchInfo({ commit, state }) {
+    setReserve(reservation) {
+      this.reservation = reservation || [];
+    },
+    setDate(date) {
+      this.date = date || "";
+    },
+    async fetchInfo() {
       const { data, error } = await supabase
         .from("tables")
         .select()
-        .eq("date", state.date);
+        .eq("date", this.date);
       if (error) {
         throw error;
-      } else {
-        commit("setReserve", data);
-        return data;
       }
+      this.setReserve(data || []);
+      return data;
     },
-    async delInfo({}, { id }) {
-      console.log("del", id);
+    async delInfo({ id }) {
       const { error, status } = await supabase
         .from("tables")
         .delete()
@@ -29,14 +34,14 @@ export default {
       }
       return status;
     },
-    async creatInfo({ state }, { data }) {
+    async creatInfo({ data }) {
       const { error, status } = await supabase.from("tables").insert({
         table: `${data.numTable}`,
         name: data.name,
         person: data.person,
         time: data.time,
         phone: data.tel,
-        date: state.date,
+        date: this.date,
       });
       if (error) {
         console.log(error);
@@ -44,16 +49,4 @@ export default {
       return status;
     },
   },
-  mutations: {
-    setReserve(state, reservation) {
-      state.reservation = reservation;
-    },
-    setDate(state, date) {
-      state.date = date;
-    },
-  },
-  getters: {
-    reservation: (s) => s.reservation,
-    date: (s) => s.date,
-  },
-};
+});

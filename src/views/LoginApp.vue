@@ -32,10 +32,10 @@
 import { ElMessage } from "element-plus";
 import { computed, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
-import { useStore } from "vuex";
+import { useAuthStore } from "@/store/auth";
 import PreloaderApp from "@/components/PreloaderApp.vue";
 
-const store = useStore();
+const authStore = useAuthStore();
 const router = useRouter();
 
 const form = reactive({
@@ -49,7 +49,7 @@ const disabled = computed(() => !form.email || !form.pass);
 const submit = async () => {
   loading.value = true;
   try {
-    await store.dispatch("login", { email: form.email, pass: form.pass });
+    await authStore.login({ email: form.email, pass: form.pass });
     router.push("/");
   } catch (error) {
     ElMessage.error("Ошибка авторизации");

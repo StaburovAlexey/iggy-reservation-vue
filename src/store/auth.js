@@ -1,27 +1,28 @@
+import { defineStore } from "pinia";
 import { supabase } from "@/lib/supabaseClient";
 
-export default {
-  state: {
+export const useAuthStore = defineStore("auth", {
+  state: () => ({
     user: {},
-  },
+  }),
   actions: {
-    async login({}, { email, pass }) {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email,
+    async login({ email, pass }) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
         password: pass,
       });
       if (error) throw error;
+      this.user = data?.user || {};
+      return data;
     },
-  },
-  mutations: {
-    setUser(state, user) {
-      state.user = user;
+    setUser(user) {
+      this.user = user || {};
     },
-    clearUser(state) {
-      state.user = {};
+    clearUser() {
+      this.user = {};
     },
   },
   getters: {
-    user: (s) => s.user,
+    isAuthenticated: (state) => Boolean(state.user?.id),
   },
-};
+});

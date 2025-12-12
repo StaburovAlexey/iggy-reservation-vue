@@ -21,19 +21,21 @@
 
 <script setup>
 import { computed } from "vue";
-import { useStore } from "vuex";
+import { storeToRefs } from "pinia";
+import { useDataStore } from "@/store/dataBase";
 
 defineEmits(["open-room"]);
 
-const store = useStore();
+const dataStore = useDataStore();
+const { reservation } = storeToRefs(dataStore);
 
-const reservations = computed(() => store.getters.reservation || []);
+const reservations = computed(() => reservation.value || []);
 const isRoomReserved = computed(() =>
   reservations.value.some((item) => item.table === "12")
 );
 
 const refresh = () => {
-  store.dispatch("fetchInfo").catch((error) => console.log(error));
+  dataStore.fetchInfo().catch((error) => console.log(error));
 };
 </script>
 
