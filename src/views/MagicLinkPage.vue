@@ -1,12 +1,10 @@
 <template>
   <div class="magic-page">
     <div class="magic-card">
-      <h2 class="magic-title">Приглашение</h2>
+      <h2 class="magic-title">Magic link</h2>
       <p class="magic-text">{{ statusText }}</p>
       <div class="magic-actions">
-        <el-button type="primary" :loading="processing" @click="processLink">
-          Проверить ссылку
-        </el-button>
+        <el-button type="primary" @click="goLogin">Перейти к входу</el-button>
         <el-button @click="goHome">На главную</el-button>
       </div>
     </div>
@@ -14,74 +12,26 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { ElMessage } from "element-plus";
-import { useStore } from "vuex";
-import { supabase } from "@/lib/supabaseClient";
+import { computed, ref } from "vue";
+import { useRouter } from "vue-router";
 
 const router = useRouter();
-const route = useRoute();
-const store = useStore();
-
-const processing = ref(false);
-const status = ref("pending"); // pending | success | error
+const status = ref("unsupported"); // unsupported state
 
 const statusText = computed(() => {
-  if (status.value === "success") {
-    return "Ссылка подтверждена. Сейчас перенаправим.";
+  if (status.value === "unsupported") {
+    return "Magic-link авторизация больше не используется. Пожалуйста, войдите через форму логина.";
   }
-  if (status.value === "error") {
-    return "Не удалось активировать ссылку. Попробуйте ещё раз.";
-  }
-  return "Проверяем приглашение...";
+  return "";
 });
 
-const saveUserToStore = async () => {
-  const { data, error } = await supabase.auth.getUser();
-  if (!error && data?.user) {
-    store.commit("setUser", data.user);
-  }
-};
-
-const processLink = async () => {
-  processing.value = true;
-  status.value = "pending";
-  try {
-    const code = route.query.code;
-    if (code) {
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
-      if (error) throw error;
-    } else {
-      const hashParams = new URLSearchParams(window.location.hash.replace("#", ""));
-      const access_token = hashParams.get("access_token");
-      const refresh_token = hashParams.get("refresh_token");
-      if (access_token && refresh_token) {
-        const { error } = await supabase.auth.setSession({ access_token, refresh_token });
-        if (error) throw error;
-      } else {
-        throw new Error("В ссылке нет кода авторизации");
-      }
-    }
-    status.value = "success";
-    await saveUserToStore();
-    setTimeout(() => router.push("/profile"), 1200);
-  } catch (error) {
-    console.log(error);
-    ElMessage.error("Ошибка при обработке ссылки");
-    status.value = "error";
-  } finally {
-    processing.value = false;
-  }
+const goLogin = () => {
+  router.push("/login");
 };
 
 const goHome = () => {
   router.push("/");
 };
-
-onMounted(() => {
-  processLink();
-});
 </script>
 
 <style scoped>

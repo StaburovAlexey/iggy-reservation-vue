@@ -38,7 +38,6 @@
 import { computed, onMounted, ref, watch, defineEmits } from "vue";
 import { useRouter } from "vue-router";
 import { ArrowDown } from "@element-plus/icons-vue";
-import { supabase } from "@/lib/supabaseClient";
 import { storeToRefs } from "pinia";
 import { useDataStore } from "@/store/dataBase";
 import { useAuthStore } from "@/store/auth";
@@ -100,21 +99,13 @@ const editProfile = () => {
 
 const logout = async () => {
   try {
-    await supabase.auth.signOut();
-    authStore.clearUser();
+    authStore.logout();
   } catch (error) {
     console.log(error);
   } finally {
     router.push("/login");
   }
 };
-
-onMounted(async () => {
-  const { data, error } = await supabase.auth.getUser();
-  if (!error && data?.user) {
-    authStore.setUser(data.user);
-  }
-});
 </script>
 
 <style lang="scss" scoped>

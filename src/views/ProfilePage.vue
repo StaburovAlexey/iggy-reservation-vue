@@ -11,7 +11,6 @@
             <h2 class="profile-card__title">Профиль <el-button style="float: right;" @click="goHome">На главную</el-button></h2>
             <p class="profile-card__subtitle">Обновите имя, e-mail или пароль.</p>
           </div>
-          
         </div>
         <el-form
           :model="form"
@@ -103,7 +102,7 @@ import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import NavBar from "@/components/NavBar.vue";
 import PreloaderApp from "@/components/PreloaderApp.vue";
-import { supabase } from "@/lib/supabaseClient";
+import { api } from "@/api/client";
 import { useAuthStore } from "@/store/auth";
 
 const authStore = useAuthStore();
@@ -151,40 +150,24 @@ const resetForm = () => {
 const sendInvite = async () => {
   if (!canInvite.value) return;
   if (!inviteEmail.value) {
-    ElMessage.warning("Укажите email получателя");
+    ElMessage.warning("گ?گَگّگگٌ‘'گç email گُگ?گ>‘?‘طگّ‘'گçگ>‘?");
     return;
   }
   sendingInvite.value = true;
-  try {
-    const { error } = await supabase.auth.signInWithOtp({
-      email: inviteEmail.value,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: `${window.location.origin}/magic-link`,
-      },
-    });
-    if (error) throw error;
-    ElMessage.success("Инвайт отправлен");
-    inviteEmail.value = "";
-  } catch (error) {
-    console.log(error);
-    ElMessage.error("Не удалось отправить инвайт");
-  } finally {
-    sendingInvite.value = false;
-  }
+  ElMessage.warning("Приглашения через новый API пока не реализованы.");
+  sendingInvite.value = false;
 };
 
 const loadUser = async () => {
   loadingProfile.value = true;
   try {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data?.user) {
-      throw error || new Error("Пользователь не найден");
+    const currentUser = authStore.user;
+    if (!currentUser || !currentUser.email) {
+      throw new Error("Требуется авторизация");
     }
-    const currentUser = data.user;
-    original.fullName = currentUser.user_metadata?.full_name || "";
-    original.email = currentUser.email || "";
-    original.avatarUrl = currentUser.user_metadata?.avatar_url || "";
+    original.fullName = currentUser.user_metadata?.full_name || currentUser.name || "";
+    original.email = currentUser.email || currentUser.login || "";
+    original.avatarUrl = currentUser.user_metadata?.avatar_url || currentUser.avatar || "";
     resetForm();
     authStore.setUser(currentUser);
   } catch (error) {
@@ -201,39 +184,31 @@ const saveProfile = async () => {
   saving.value = true;
   try {
     const payload = {};
-    const meta = {};
-    // upload avatar if selected
     if (avatarFile.value) {
-      const ext = avatarFile.value.name?.split(".").pop() || "png";
-      const fileName = `avatar-${Date.now()}.${ext}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(fileName, avatarFile.value);
-      if (uploadError) throw uploadError;
-      const { data: publicUrl } = supabase.storage.from("avatars").getPublicUrl(uploadData.path);
-      meta.avatar_url = publicUrl.publicUrl;
-      form.avatarUrl = meta.avatar_url;
+      const uploadResponse = await api.uploadFile(avatarFile.value);
+      if (uploadResponse?.url) {
+        form.avatarUrl = uploadResponse.url;
+      }
     }
     if (form.fullName !== original.fullName) {
-      meta.full_name = form.fullName;
-    }
-    if (Object.keys(meta).length) {
-      payload.data = meta;
+      payload.name = form.fullName;
     }
     if (form.email && form.email !== original.email) {
-      payload.email = form.email;
+      payload.login = form.email;
     }
     if (form.password) {
       payload.password = form.password;
     }
+    if (form.avatarUrl) {
+      payload.avatar = form.avatarUrl;
+    }
 
-    const { data, error } = await supabase.auth.updateUser(payload);
-    if (error) throw error;
-    const updatedUser = data.user;
+    const response = await api.updateProfile(payload);
+    const updatedUser = response?.user || {};
 
-    original.fullName = updatedUser.user_metadata?.full_name || "";
-    original.email = updatedUser.email || "";
-    original.avatarUrl = updatedUser.user_metadata?.avatar_url || "";
+    original.fullName = updatedUser.user_metadata?.full_name || updatedUser.name || "";
+    original.email = updatedUser.email || updatedUser.login || "";
+    original.avatarUrl = updatedUser.user_metadata?.avatar_url || updatedUser.avatar || "";
     resetForm();
     authStore.setUser(updatedUser);
     ElMessage.success("Профиль обновлен");

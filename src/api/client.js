@@ -13,7 +13,9 @@ const buildUrl = (path = "", params = {}) => {
     throw new Error("API base URL is missing. Set VITE_APP_API in your environment.");
   }
 
-  const url = new URL(path, API_BASE_URL);
+  const base = API_BASE_URL.endsWith("/") ? API_BASE_URL : `${API_BASE_URL}/`;
+  const cleanPath = `${path || ""}`.replace(/^\/+/, "");
+  const url = new URL(cleanPath, base);
   Object.entries(params || {})
     .filter(([, value]) => value !== undefined && value !== null)
     .forEach(([key, value]) => url.searchParams.append(key, value));
