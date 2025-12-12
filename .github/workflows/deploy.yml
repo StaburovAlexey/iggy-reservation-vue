@@ -49,7 +49,8 @@ jobs:
         run: |
           set -euxo pipefail
           echo "${{ secrets.FRONTEND_ENV_B64 }}" | base64 -d > .env
-          tr -d '' < .env > .env.tmp && mv .env.tmp .env
+          tr -d '
+' < .env > .env.tmp && mv .env.tmp .env
           echo ".env создан (первые строки):"
           head -n 5 .env | sed 's/=.*/=<hidden>/'
 
@@ -67,7 +68,8 @@ jobs:
           mkdir -p ~/.ssh
 
           echo "${{ secrets.SSH_KEY_B64 }}" | base64 -d > ~/.ssh/id_ed25519
-          tr -d '' < ~/.ssh/id_ed25519 > ~/.ssh/id_ed25519.tmp && mv ~/.ssh/id_ed25519.tmp ~/.ssh/id_ed25519
+          tr -d '
+' < ~/.ssh/id_ed25519 > ~/.ssh/id_ed25519.tmp && mv ~/.ssh/id_ed25519.tmp ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
 
           ssh-keyscan -p ${{ secrets.SSH_PORT }} -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
