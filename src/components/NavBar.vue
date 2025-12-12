@@ -20,13 +20,13 @@
             </div>
           </el-dropdown-item>
           <el-dropdown-item divided @click="editProfile">
-            Редактировать профиль
+            ÿç?øó‘'ñ‘???ø‘'‘? õ‘??‘"ñ>‘?
           </el-dropdown-item>
           <el-dropdown-item @click="toggleTheme">
-            Сменить тему: {{ nextThemeLabel }}
+            ö?ç?ñ‘'‘? ‘'ç?‘?: {{ nextThemeLabel }}
           </el-dropdown-item>
           <el-dropdown-item divided @click="logout">
-            Выйти из аккаунта
+            '‘<ü‘'ñ ñú øóóø‘??‘'ø
           </el-dropdown-item>
         </el-dropdown-menu>
       </template>
@@ -35,23 +35,35 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch, defineEmits } from "vue";
 import { useRouter } from "vue-router";
-import { useStore } from "vuex";
 import { ArrowDown } from "@element-plus/icons-vue";
 import { supabase } from "@/lib/supabaseClient";
+import { storeToRefs } from "pinia";
+import { useDataStore } from "@/store/dataBase";
+import { useAuthStore } from "@/store/auth";
 
-const store = useStore();
+defineEmits(["open-room"]);
+
+const dataStore = useDataStore();
+const authStore = useAuthStore();
+const { reservation } = storeToRefs(dataStore);
+const { user } = storeToRefs(authStore);
+
+const reservations = computed(() => reservation.value || []);
+const isRoomReserved = computed(() =>
+  reservations.value.some((item) => item.table === "12")
+);
+
 const router = useRouter();
 const THEME_KEY = "iggy-theme";
 const theme = ref(localStorage.getItem(THEME_KEY) || "dark");
 
-const user = computed(() => store.getters.user || {});
 const userName = computed(
-  () => user.value.user_metadata?.full_name || user.value.email || "Пользователь"
+  () => user.value?.user_metadata?.full_name || user.value?.email || "??>‘?ú??ø‘'ç>‘?"
 );
-const userEmail = computed(() => user.value.email || "Нет e-mail");
-const avatarUrl = computed(() => user.value.user_metadata?.avatar_url || "");
+const userEmail = computed(() => user.value?.email || "?ç‘' e-mail");
+const avatarUrl = computed(() => user.value?.user_metadata?.avatar_url || "");
 const avatarFallback = computed(() =>
   userName.value ? userName.value.slice(0, 1).toUpperCase() : "U"
 );
@@ -71,11 +83,11 @@ watch(
 );
 
 const nextThemeLabel = computed(() =>
-  theme.value === "light" ? "Светлая тема" : "Темная тема"
+  theme.value === "light" ? "ö?ç‘'>ø‘? ‘'ç?ø" : "÷ç??ø‘? ‘'ç?ø"
 );
 
 const refresh = () => {
-  store.dispatch("fetchInfo").catch((error) => console.log(error));
+  dataStore.fetchInfo().catch((error) => console.log(error));
 };
 
 const toggleTheme = () => {
@@ -89,7 +101,7 @@ const editProfile = () => {
 const logout = async () => {
   try {
     await supabase.auth.signOut();
-    store.commit("clearUser");
+    authStore.clearUser();
   } catch (error) {
     console.log(error);
   } finally {
@@ -100,7 +112,7 @@ const logout = async () => {
 onMounted(async () => {
   const { data, error } = await supabase.auth.getUser();
   if (!error && data?.user) {
-    store.commit("setUser", data.user);
+    authStore.setUser(data.user);
   }
 });
 </script>

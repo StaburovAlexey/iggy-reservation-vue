@@ -73,21 +73,20 @@
 
 <script setup>
 import { computed, reactive, ref, watch, defineExpose } from "vue";
-import { useStore } from "vuex";
+import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
 import ModalApp from "./ModalApp.vue";
 import { sendPushMessage } from "@/telegram/telegramSendMessage";
+import { useDataStore } from "@/store/dataBase";
 
-const store = useStore();
+const dataStore = useDataStore();
+const { date, reservation: storeReservation } = storeToRefs(dataStore);
 const loading = ref(false);
 const dialogVisible = ref(false);
 const selectedTable = ref("");
 const reservations = ref([]);
 
-const date = computed(() => store.getters.date);
-const storeReservations = computed(() => store.getters.reservation || []);
-const currentUser = computed(() => store.getters.user || {});
-const userId = computed(() => currentUser.value?.id || "");
+const storeReservations = computed(() => storeReservation.value || []);
 
 const tables = reactive({
   table_1: [],
@@ -146,7 +145,7 @@ const fetchReservations = async () => {
   if (!date.value) return;
   loading.value = true;
   try {
-    const data = await store.dispatch("fetchInfo");
+    const data = await dataStore.fetchInfo();
     reservations.value = data || [];
   } catch (error) {
     console.log(error);
@@ -159,7 +158,7 @@ const delReserve = async ({ id }) => {
   if (!id) return;
   loading.value = true;
   try {
-    const status = await store.dispatch("delInfo", { id });
+    const status = await dataStore.delInfo({ id });
     if (status === 204 || status === "204") {
       await fetchReservations();
       ElMessage.success("Бронь удалена");
@@ -183,8 +182,8 @@ const creatReserve = async (data) => {
   }
   loading.value = true;
   try {
-    const status = await store.dispatch("creatInfo", {
-      data: { ...data, numTable: targetTable, userId: userId.value },
+    const status = await dataStore.creatInfo({
+      data: { ...data, numTable: targetTable },
     });
     if (status === 201 || status === "201") {
       await fetchReservations();
@@ -220,7 +219,7 @@ watch(reservations, () => populateTables(), { immediate: true, deep: true });
 watch(
   storeReservations,
   (value) => {
-    reservations.value = value;
+    reservations.value = value || [];
   },
   { immediate: true, deep: true }
 );
