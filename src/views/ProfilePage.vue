@@ -8,17 +8,15 @@
       <el-card v-else class="profile-card" shadow="hover">
         <div class="profile-card__header">
           <div>
-            <h2 class="profile-card__title">Профиль <el-button style="float: right;" @click="goHome">На главную</el-button></h2>
+            <h2 class="profile-card__title">
+              Профиль
+              <el-button style="float: right;" @click="goHome">На главную</el-button>
+            </h2>
             <p class="profile-card__subtitle">Обновите имя, e-mail и аватар.</p>
           </div>
         </div>
-        <el-form
-          :model="form"
-          label-position="top"
-          class="profile-form"
-          autocomplete="off"
-          @submit.prevent
-        >
+
+        <el-form :model="form" label-position="top" class="profile-form" autocomplete="off" @submit.prevent>
           <el-form-item label="Имя">
             <el-input v-model="form.fullName" autocomplete="off" placeholder="Как вас зовут?" />
           </el-form-item>
@@ -53,22 +51,18 @@
           </el-form-item>
           <div class="profile-form__actions">
             <el-button @click="resetForm" :disabled="saving || loadingProfile">Сбросить</el-button>
-            <el-button
-              type="primary"
-              :disabled="!canSave"
-              :loading="saving"
-              @click="saveProfile"
-            >
+            <el-button type="primary" :disabled="!canSave" :loading="saving" @click="saveProfile">
               Сохранить
             </el-button>
           </div>
         </el-form>
-        <el-card v-if="canInvite" class="invite-card" shadow="never">
+
+        <el-card v-if="isAdmin" class="invite-card" shadow="never">
           <div class="invite-card__header">
             <div>
-              <h3 class="invite-card__title">Зарегистрировать пользователя</h3>
+              <h3 class="invite-card__title">Создать пользователя</h3>
               <p class="invite-card__subtitle">
-                Отправьте приглашение на e-mail, чтобы создать аккаунт.
+                Админ может создать аккаунт, задав e-mail, имя, пароль и роль.
               </p>
             </div>
           </div>
@@ -79,11 +73,7 @@
               placeholder="email пользователя"
               :disabled="sendingInvite"
             />
-            <el-input
-              v-model="newUser.name"
-              placeholder="Имя"
-              :disabled="sendingInvite"
-            />
+            <el-input v-model="newUser.name" placeholder="Имя" :disabled="sendingInvite" />
             <el-input
               v-model="newUser.password"
               type="password"
@@ -95,15 +85,41 @@
               <el-option label="Админ" value="admin" />
               <el-option label="Пользователь" value="user" />
             </el-select>
-            <el-button
-              type="primary"
-              :loading="sendingInvite"
-              :disabled="sendingInvite"
-              @click="sendInvite"
-            >
+            <el-button type="primary" :loading="sendingInvite" :disabled="sendingInvite" @click="createUser">
               Создать
             </el-button>
           </div>
+        </el-card>
+
+        <el-card v-if="isAdmin" class="settings-card" shadow="never">
+          <div class="settings-card__header">
+            <div>
+              <h3 class="settings-card__title">Настройки бота</h3>
+              <p class="settings-card__subtitle">Измените bot_id, chat_id и admin_chat.</p>
+            </div>
+          </div>
+          <el-form label-position="top" class="settings-form" @submit.prevent>
+            <el-form-item label="bot_id">
+              <el-input v-model="settings.bot_id" placeholder="123456:ABCD..." :disabled="loadingSettings" />
+            </el-form-item>
+            <el-form-item label="chat_id">
+              <el-input v-model="settings.chat_id" placeholder="-1001234567890" :disabled="loadingSettings" />
+            </el-form-item>
+            <el-form-item label="admin_chat">
+              <el-input v-model="settings.admin_chat" placeholder="-1001234567890" :disabled="loadingSettings" />
+            </el-form-item>
+            <div class="settings-form__actions">
+              <el-button @click="resetSettings" :disabled="savingSettings || loadingSettings">Сбросить</el-button>
+              <el-button
+                type="primary"
+                :loading="savingSettings"
+                :disabled="savingSettings || loadingSettings"
+                @click="saveSettings"
+              >
+                Сохранить настройки
+              </el-button>
+            </div>
+          </el-form>
         </el-card>
       </el-card>
     </div>
@@ -126,12 +142,9 @@ const loadingProfile = ref(true);
 const saving = ref(false);
 const avatarFile = ref(null);
 const sendingInvite = ref(false);
-const newUser = reactive({
-  email: "",
-  name: "",
-  password: "",
-  role: "user",
-});
+const loadingSettings = ref(false);
+const savingSettings = ref(false);
+
 const form = reactive({
   fullName: "",
   email: "",
@@ -144,7 +157,25 @@ const original = reactive({
   avatarUrl: "",
 });
 
-const canInvite = computed(() => authStore.user?.role === "admin");
+const newUser = reactive({
+  email: "",
+  name: "",
+  password: "",
+  role: "user",
+});
+
+const settings = reactive({
+  bot_id: "",
+  chat_id: "",
+  admin_chat: "",
+});
+const originalSettings = reactive({
+  bot_id: "",
+  chat_id: "",
+  admin_chat: "",
+});
+
+const isAdmin = computed(() => authStore.user?.role === "admin");
 
 const canSave = computed(
   () =>
@@ -165,38 +196,15 @@ const resetForm = () => {
   avatarFile.value = null;
 };
 
-const sendInvite = async () => {
-  if (!canInvite.value) return;
-  if (!newUser.email || !newUser.password) {
-    ElMessage.warning("Укажите email и пароль");
-    return;
-  }
-  sendingInvite.value = true;
-  try {
-    const payload = {
-      login: newUser.email,
-      password: newUser.password,
-      name: newUser.name || "",
-      role: newUser.role || "user",
-      avatar: null,
-    };
-    const resp = await api.registerUser(payload);
-    if (resp?.user) {
-      ElMessage.success("Пользователь создан");
-      newUser.email = "";
-      newUser.name = "";
-      newUser.password = "";
-      newUser.role = "user";
-    } else {
-      ElMessage.error("Не удалось создать пользователя");
-    }
-  } catch (error) {
-    console.log(error);
-    ElMessage.error("Ошибка при создании пользователя");
-  } finally {
-    sendingInvite.value = false;
-  }
+const handleAvatarChange = (file) => {
+  avatarFile.value = file.raw;
 };
+
+const initials = computed(() => (form.fullName ? form.fullName.slice(0, 1).toUpperCase() : "U"));
+
+const avatarPreview = computed(() =>
+  avatarFile.value ? URL.createObjectURL(avatarFile.value) : form.avatarUrl || ""
+);
 
 const loadUser = async () => {
   loadingProfile.value = true;
@@ -260,23 +268,95 @@ const saveProfile = async () => {
   }
 };
 
+const createUser = async () => {
+  if (!isAdmin.value) return;
+  if (!newUser.email || !newUser.password) {
+    ElMessage.warning("Укажите email и пароль");
+    return;
+  }
+  sendingInvite.value = true;
+  try {
+    const payload = {
+      login: newUser.email,
+      password: newUser.password,
+      name: newUser.name || "",
+      role: newUser.role || "user",
+      avatar: null,
+    };
+    const resp = await api.registerUser(payload);
+    if (resp?.user) {
+      ElMessage.success("Пользователь создан");
+      newUser.email = "";
+      newUser.name = "";
+      newUser.password = "";
+      newUser.role = "user";
+    } else {
+      ElMessage.error("Не удалось создать пользователя");
+    }
+  } catch (error) {
+    console.log(error);
+    ElMessage.error("Ошибка при создании пользователя");
+  } finally {
+    sendingInvite.value = false;
+  }
+};
+
+const resetSettings = () => {
+  settings.bot_id = originalSettings.bot_id;
+  settings.chat_id = originalSettings.chat_id;
+  settings.admin_chat = originalSettings.admin_chat;
+};
+
+const loadSettings = async () => {
+  if (!isAdmin.value) return;
+  loadingSettings.value = true;
+  try {
+    const resp = await api.getSettings();
+    const s = resp?.settings || resp || {};
+    originalSettings.bot_id = s.bot_id || "";
+    originalSettings.chat_id = s.chat_id || "";
+    originalSettings.admin_chat = s.admin_chat || "";
+    resetSettings();
+  } catch (error) {
+    console.log(error);
+    ElMessage.error("Не удалось загрузить настройки");
+  } finally {
+    loadingSettings.value = false;
+  }
+};
+
+const saveSettings = async () => {
+  if (!isAdmin.value) return;
+  savingSettings.value = true;
+  try {
+    const payload = {
+      bot_id: settings.bot_id || null,
+      chat_id: settings.chat_id || null,
+      admin_chat: settings.admin_chat || null,
+    };
+    const resp = await api.updateSettings(payload);
+    const s = resp?.settings || payload;
+    originalSettings.bot_id = s.bot_id || "";
+    originalSettings.chat_id = s.chat_id || "";
+    originalSettings.admin_chat = s.admin_chat || "";
+    resetSettings();
+    ElMessage.success("Настройки сохранены");
+  } catch (error) {
+    console.log(error);
+    ElMessage.error("Не удалось сохранить настройки");
+  } finally {
+    savingSettings.value = false;
+  }
+};
+
 const goHome = () => {
   router.push("/");
 };
 
-onMounted(loadUser);
-
-const handleAvatarChange = (file) => {
-  avatarFile.value = file.raw;
-};
-
-const initials = computed(() =>
-  form.fullName ? form.fullName.slice(0, 1).toUpperCase() : "U"
-);
-
-const avatarPreview = computed(() =>
-  avatarFile.value ? URL.createObjectURL(avatarFile.value) : form.avatarUrl || ""
-);
+onMounted(async () => {
+  await loadUser();
+  await loadSettings();
+});
 </script>
 
 <style lang="scss" scoped>
@@ -326,36 +406,42 @@ const avatarPreview = computed(() =>
   margin-top: 4px;
 }
 
-.invite-card {
+.invite-card,
+.settings-card {
   margin-top: 16px;
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
 }
 
-.invite-card__header {
+.invite-card__header,
+.settings-card__header {
   margin-bottom: 8px;
 }
 
-.invite-card__title {
+.invite-card__title,
+.settings-card__title {
   margin: 0;
 }
 
-.invite-card__subtitle {
+.invite-card__subtitle,
+.settings-card__subtitle {
   margin: 4px 0 0;
   color: var(--text-secondary);
   font-size: 13px;
 }
 
 .invite-card__form {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 8px;
   align-items: center;
-  flex-wrap: wrap;
 }
 
-.invite-card__form :deep(.el-input) {
-  flex: 1;
-  min-width: 200px;
+.settings-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .profile-loader {

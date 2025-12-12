@@ -78,13 +78,17 @@ import { ElMessage } from "element-plus";
 import ModalApp from "./ModalApp.vue";
 import { sendPushMessage } from "@/telegram/telegramSendMessage";
 import { useDataStore } from "@/store/dataBase";
+import { useAuthStore } from "@/store/auth";
 
 const dataStore = useDataStore();
+const authStore = useAuthStore();
 const { date, reservation: storeReservation } = storeToRefs(dataStore);
+const { user } = storeToRefs(authStore);
 const loading = ref(false);
 const dialogVisible = ref(false);
 const selectedTable = ref("");
 const reservations = ref([]);
+const userId = computed(() => user.value?.uuid);
 
 const storeReservations = computed(() => storeReservation.value || []);
 
@@ -176,14 +180,14 @@ const creatReserve = async (data) => {
     ElMessage.warning("Заполните время и телефон");
     return;
   }
-  if (!userId.value) {
+  if (!userId?.value) {
     ElMessage.error("Не удалось определить пользователя и передать id");
     return;
   }
   loading.value = true;
   try {
     const status = await dataStore.creatInfo({
-      data: { ...data, numTable: targetTable },
+      data: { ...data, numTable: targetTable, user_id: userId.value },
     });
     if (status === 201 || status === "201") {
       await fetchReservations();

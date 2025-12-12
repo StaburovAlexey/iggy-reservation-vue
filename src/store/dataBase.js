@@ -38,6 +38,7 @@ export const useDataStore = defineStore("dataBase", {
         time: data.time,
         phone: data.tel,
         date: this.date,
+        user_id: data.user_id,
       };
       try {
         await api.createTable(payload);

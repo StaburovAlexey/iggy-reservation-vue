@@ -136,15 +136,15 @@ const emitDelete = (id) => {
   emit("del", { id });
 };
 
-const userName = (res) => res?.user?.full_name || "Без имени";
+const userName = (res) => res?.user?.name || "Без имени";
 const userEmail = (res) => res?.user?.email || "Без email";
 const userEmailMasked = (res) => {
-  const email = res?.user?.email;
+  const email = res?.user?.login;
   if (!email) return "Нет почты";
   const prefix = email.slice(0, 5);
   return email.length > 5 ? `${prefix}...` : prefix;
 };
-const userAvatar = (res) => res?.user?.avatar_url || "";
+const userAvatar = (res) => res?.user?.avatar || "";
 const userInitial = (res) => userName(res).slice(0, 1).toUpperCase();
 
 watch(
