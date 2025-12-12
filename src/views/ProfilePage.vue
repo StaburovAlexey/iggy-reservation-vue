@@ -100,13 +100,13 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
-import { useStore } from "vuex";
 import { ElMessage } from "element-plus";
 import NavBar from "@/components/NavBar.vue";
 import PreloaderApp from "@/components/PreloaderApp.vue";
 import { supabase } from "@/lib/supabaseClient";
+import { useAuthStore } from "@/store/auth";
 
-const store = useStore();
+const authStore = useAuthStore();
 const router = useRouter();
 
 const loadingProfile = ref(true);
@@ -126,8 +126,8 @@ const original = reactive({
   avatarUrl: "",
 });
 
-const adminEmails = ["gilbertfrost@yandex,ru", "gilbertfrost@yandex.ru"];
-const canInvite = computed(() => adminEmails.includes((store.getters.user?.email || "").toLowerCase()));
+const adminEmails = ["gilbertfrost@yandex.ru"];
+const canInvite = computed(() => adminEmails.includes((authStore.user?.email || "").toLowerCase()));
 
 const canSave = computed(
   () =>
@@ -186,7 +186,7 @@ const loadUser = async () => {
     original.email = currentUser.email || "";
     original.avatarUrl = currentUser.user_metadata?.avatar_url || "";
     resetForm();
-    store.commit("setUser", currentUser);
+    authStore.setUser(currentUser);
   } catch (error) {
     console.log(error);
     ElMessage.error("Не удалось загрузить профиль");
@@ -235,7 +235,7 @@ const saveProfile = async () => {
     original.email = updatedUser.email || "";
     original.avatarUrl = updatedUser.user_metadata?.avatar_url || "";
     resetForm();
-    store.commit("setUser", updatedUser);
+    authStore.setUser(updatedUser);
     ElMessage.success("Профиль обновлен");
   } catch (error) {
     console.log(error);

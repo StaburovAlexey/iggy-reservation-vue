@@ -20,13 +20,13 @@
             </div>
           </el-dropdown-item>
           <el-dropdown-item divided @click="editProfile">
-            ÿç?øó‘'ñ‘???ø‘'‘? õ‘??‘"ñ>‘?
+            Редактировать профиль
           </el-dropdown-item>
           <el-dropdown-item @click="toggleTheme">
-            ö?ç?ñ‘'‘? ‘'ç?‘?: {{ nextThemeLabel }}
+            Сменить тему: {{ nextThemeLabel }}
           </el-dropdown-item>
           <el-dropdown-item divided @click="logout">
-            '‘<ü‘'ñ ñú øóóø‘??‘'ø
+            Выйти из аккаунта
           </el-dropdown-item>
         </el-dropdown-menu>
       </template>
