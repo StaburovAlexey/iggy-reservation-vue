@@ -53,7 +53,8 @@ const processLink = async () => {
       const { error } = await supabase.auth.exchangeCodeForSession(code);
       if (error) throw error;
     } else {
-      const hashParams = new URLSearchParams(window.location.hash.replace("#", ""));
+      const hashString = window.location.href.split("#").pop() || "";
+      const hashParams = new URLSearchParams(hashString);
       const access_token = hashParams.get("access_token");
       const refresh_token = hashParams.get("refresh_token");
       if (access_token && refresh_token) {
@@ -86,7 +87,10 @@ onMounted(() => {
 
 <style scoped>
 .magic-page {
+<<<<<<< HEAD
   min-height: 100vh;
+=======
+>>>>>>> main
   display: flex;
   align-items: center;
   justify-content: center;
@@ -97,7 +101,11 @@ onMounted(() => {
 
 .magic-card {
   max-width: 420px;
+<<<<<<< HEAD
   width: 100%;
+=======
+  width: 95%;
+>>>>>>> main
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: 12px;
