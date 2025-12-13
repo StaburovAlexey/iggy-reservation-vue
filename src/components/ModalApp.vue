@@ -84,7 +84,7 @@
 </template>
 
 <script setup>
-import { computed, defineEmits, defineProps, reactive, ref, watch } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
 
 const props = defineProps({
@@ -240,10 +240,6 @@ watch(
 }
 
 .dialog-form {
-<<<<<<< HEAD
-=======
-
->>>>>>> main
   background: var(--bg-surface);
 }
 

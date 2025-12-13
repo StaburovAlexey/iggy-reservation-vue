@@ -35,7 +35,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, defineEmits } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { ArrowDown } from "@element-plus/icons-vue";
 import { storeToRefs } from "pinia";

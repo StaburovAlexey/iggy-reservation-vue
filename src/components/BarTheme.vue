@@ -72,7 +72,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch, defineExpose } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
 import ModalApp from "./ModalApp.vue";

@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHashHistory } from "vue-router";
 import pinia from "@/store";
 import { useAuthStore } from "@/store/auth";
 import { getToken } from "@/api/client";
