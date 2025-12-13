@@ -48,12 +48,17 @@
       <div class="dialog-grid__right">
         <div class="dialog-grid__subtitle">Создать бронь</div>
         <el-form :model="form" label-position="top" class="dialog-form">
-          <el-form-item label="Время">
+          <el-form-item label="Время брони">
             <el-time-picker
-              v-model="form.time"
-              placeholder="Выберите время"
+              v-model="form.timeRange"
+              style="width: 200px;"
+              is-range
+              range-separator="-"
+              start-placeholder="от"
+              end-placeholder="до"
               format="HH:mm"
               value-format="HH:mm"
+              size="small"
               :editable="false"
             />
           </el-form-item>
@@ -100,7 +105,7 @@ const props = defineProps({
 const emit = defineEmits(["update:modelValue", "del", "creat"]);
 
 const form = reactive({
-  time: "",
+  timeRange: [],
   person: "",
   name: "",
   tel: "",
@@ -116,18 +121,20 @@ const visible = computed({
 const numTable = computed(() => String(props.numberTable));
 
 const resetForm = () => {
-  form.time = "";
+  form.timeRange = [];
   form.person = "";
   form.name = "";
   form.tel = "";
 };
 
 const emitCreate = () => {
-  if (!form.time || !form.tel) {
+  if (form.timeRange.length !== 2 || !form.timeRange[0] || !form.timeRange[1] || !form.tel) {
     ElMessage.warning("Укажите время и телефон");
     return;
   }
-  emit("creat", { ...form, numTable: numTable.value });
+  const [timeFrom, timeTo] = form.timeRange;
+  const time = `${timeFrom}-${timeTo}`;
+  emit("creat", { time, person: form.person, name: form.name, tel: form.tel, numTable: numTable.value });
   visible.value = false;
 };
 
@@ -181,6 +188,7 @@ watch(
   background: var(--bg-surface);
   padding: 12px;
   border-radius: 8px;
+  max-width: 100%;
   color: var(--text-primary);
   border: 1px solid var(--border-color);
 }
@@ -232,6 +240,10 @@ watch(
 }
 
 .dialog-form {
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
   background: var(--bg-surface);
 }
 
