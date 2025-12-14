@@ -84,8 +84,11 @@
 
         <div v-if="currentTable" class="panel-grid">
           <div class="field">
-            <span class="field-label">ID стола</span>
-            <el-input v-model="currentTable.id" size="small" @input="onTableIdChange" />
+            <span class="field-label">ID столика</span>
+            <div class="schema-editor__id-row">
+              <el-input v-model="editableId" size="small" />
+              <el-button size="small" @click="applyTableIdChange">Применить</el-button>
+            </div>
           </div>
           <div class="field">
             <span class="field-label">Название/номер</span>
@@ -293,6 +296,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import { ElMessage } from "element-plus";
 
 const props = defineProps({
   schemaData: {
@@ -344,6 +348,8 @@ const lastMove = reactive({
 });
 
 const currentTable = computed(() => tables.value.find((table) => table.id === selectedId.value) || null);
+const lastSelectedTable = ref(null);
+const editableId = ref("");
 const sortedTables = computed(() =>
   [...tables.value].sort((a, b) => {
     const za = tableZ(a);
@@ -354,6 +360,19 @@ const sortedTables = computed(() =>
 
 const currentSeparator = computed(
   () => separators.value.find((item) => item.id === selectedSeparatorId.value) || null
+);
+
+watch(
+  currentTable,
+  (val) => {
+    if (val) {
+      lastSelectedTable.value = val;
+      editableId.value = val.id ?? "";
+    } else {
+      editableId.value = "";
+    }
+  },
+  { immediate: true }
 );
 
 const newTable = reactive({
@@ -563,9 +582,17 @@ const resetLayout = () => {
 const addTable = () => {
   const customId = (newTable.id || "").trim();
   const label = (newTable.label || "").trim();
+  if (!customId) {
+    ElMessage.warning("Введите уникальный ID стола");
+    return;
+  }
+  if (tables.value.some((item) => String(item.id) === customId)) {
+    ElMessage.warning("Такой ID уже используется");
+    return;
+  }
   const shape = newTable.shape === "circle" ? "circle" : "rect";
   const base = {
-    id: customId || `${Date.now()}`,
+    id: customId,
     label,
     shape,
     x: schemaSize.width / 2,
@@ -635,16 +662,28 @@ const addSeparator = () => {
   selectedSeparatorId.value = id;
 };
 
-const onTableIdChange = (value) => {
-  if (!currentTable.value) return;
-  const newId = String(value || "").trim();
-  if (!newId) {
-    // Если поле пустое, не меняем id и возвращаем отображаемое значение
-    currentTable.value.id = selectedId.value;
+const applyTableIdChange = () => {
+  const target = currentTable.value || lastSelectedTable.value;
+  if (!target) return;
+
+  const previousId = target.id;
+  const nextId = String(editableId.value || "").trim();
+  if (!nextId) {
+    editableId.value = previousId;
+    ElMessage.warning("ID не может быть пустым");
     return;
   }
-  selectedId.value = newId;
-  currentTable.value.id = newId;
+
+  const duplicate = tables.value.some((item) => item !== target && String(item.id) === nextId);
+  if (duplicate) {
+    editableId.value = previousId;
+    ElMessage.warning("ID должен быть уникальным");
+    return;
+  }
+
+  target.id = nextId;
+  selectedId.value = nextId;
+  editableId.value = nextId;
 };
 
 const onSeparatorOrientationChange = (value) => {
@@ -781,6 +820,12 @@ onBeforeUnmount(() => {
   justify-content: flex-end;
 }
 
+.schema-editor__id-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .color-row {
   display: flex;
   align-items: center;
@@ -811,4 +856,3 @@ onBeforeUnmount(() => {
   }
 }
 </style>
-
