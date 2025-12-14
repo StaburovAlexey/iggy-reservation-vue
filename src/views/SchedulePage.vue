@@ -78,7 +78,16 @@
                         :closable="isAdmin"
                         @close.stop="removePersonFromDate(data.day, group.key, person.id)"
                       >
-                        {{ person.name }}
+                        <div class="schedule-date__person">
+                          <el-avatar
+                            size="18"
+                            :src="person.avatarUrl"
+                            class="schedule-date__person-avatar"
+                          >
+                            {{ person.name ? person.name.charAt(0).toUpperCase() : "" }}
+                          </el-avatar>
+                          <span class="schedule-date__person-name">{{ person.name }}</span>
+                        </div>
                       </el-tag>
                       <span v-if="group.people.length > 2" class="schedule-date__more">
                         +{{ group.people.length - 2 }}
@@ -107,7 +116,16 @@
               @dragstart="handleDragStart($event, emp)"
               @dragend="handleDragEnd"
             >
-              {{ emp.name }}
+              <div class="employee-pill__content">
+                <el-avatar
+                  size="18"
+                  :src="emp.avatarUrl"
+                  class="employee-pill__avatar"
+                >
+                  {{ emp.name ? emp.name.charAt(0).toUpperCase() : "" }}
+                </el-avatar>
+                <span class="employee-pill__name">{{ emp.name }}</span>
+              </div>
             </el-tag>
             <el-empty v-if="!employees.length" description="Нет сотрудников"></el-empty>
           </div>
@@ -152,6 +170,26 @@ const employeesLoading = ref(false);
 const draggingEmployee = ref(null);
 const scheduleMap = ref({});
 
+const resolveAvatarUrl = (item) => {
+  if (!item || typeof item === "string") {
+    return "";
+  }
+  const meta = item.user_metadata || item.userMetadata || {};
+  const photoUrl =
+    typeof item.photo === "string" ? item.photo : item.photo?.url || item.photo?.thumbnail;
+  return (
+    item.avatar ||
+    item.avatarUrl ||
+    item.avatar_url ||
+    meta.avatar_url ||
+    meta.avatarUrl ||
+    item.image ||
+    item.picture ||
+    photoUrl ||
+    ""
+  );
+};
+
 const normalizePeople = (list = [], groupKey = "") => {
   if (!Array.isArray(list)) return [];
   return list
@@ -166,7 +204,7 @@ const normalizePeople = (list = [], groupKey = "") => {
       const cleaned = String(name || "").trim();
       if (!cleaned) return null;
       const id = item.id || item.uuid || `${groupKey}-${index}-${cleaned}`;
-      return { id, name: cleaned };
+      return { id, name: cleaned, avatarUrl: resolveAvatarUrl(item) };
     })
     .filter(Boolean);
 };
@@ -183,7 +221,7 @@ const normalizeEmployee = (item) => {
   const cleaned = String(name || "").trim();
   if (!cleaned) return null;
   const id = item.id || item.uuid || item.user_id || item.login || cleaned;
-  return { id, name: cleaned };
+  return { id, name: cleaned, avatarUrl: resolveAvatarUrl(item) };
 };
 
 const emptyDay = () => ({
@@ -318,7 +356,7 @@ const normalizeDroppedEmployee = (employee) => {
   const cleaned = String(name || "").trim();
   if (!cleaned) return null;
   const id = employee.id || employee.uuid || employee.user_id || employee.login || cleaned;
-  return { id, name: cleaned };
+  return { id, name: cleaned, avatarUrl: employee.avatarUrl || resolveAvatarUrl(employee) };
 };
 
 const addEmployeeToDate = (dateKey, groupKey, employee) => {
@@ -422,6 +460,13 @@ onMounted(() => {
   background: var(--bg-surface-2);
   border: 1px solid var(--border-color);
 }
+:deep(.el-calendar-table .el-calendar-day:hover) {
+  background: transparent;
+  transform: none;
+}
+:deep(.el-calendar-table .el-calendar-day) {
+  height: auto !important;
+}
 
 .schedule-grid__employees {
   background: var(--bg-surface-2);
@@ -433,9 +478,11 @@ onMounted(() => {
 
 .employee-header {
   margin-bottom: 6px;
+  
 }
 
 .employee-header h3 {
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -458,6 +505,24 @@ onMounted(() => {
   user-select: none;
 }
 
+.employee-pill__content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.employee-pill__avatar {
+  flex-shrink: 0;
+  height: 18px;
+  width: 18px;
+  font-size: 10px;
+}
+
+.employee-pill__name {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .schedule-card__header {
   display: flex;
   align-items: center;
@@ -469,6 +534,7 @@ onMounted(() => {
 
 .schedule-card__title {
   margin: 0;
+  color: var(--text-primary);
 }
 
 .schedule-card__subtitle {
@@ -496,12 +562,6 @@ onMounted(() => {
   transition: background 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
   border: 1px solid transparent;
   cursor: default;
-}
-
-.schedule-date:hover {
-  background: rgba(255, 255, 255, 0.04);
-  transform: translateY(-1px);
-  border-color: var(--border-color);
 }
 
 .schedule-date.is-today {
@@ -541,6 +601,24 @@ onMounted(() => {
 .schedule-date__group-name {
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+.schedule-date__person {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.schedule-date__person-avatar {
+  flex-shrink: 0;
+  height: 18px;
+  width: 18px;
+  font-size: 10px;
+}
+
+.schedule-date__person-name {
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .schedule-date__people {
