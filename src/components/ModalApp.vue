@@ -49,17 +49,23 @@
         <div class="dialog-grid__subtitle">Создать бронь</div>
         <el-form :model="form" label-position="top" class="dialog-form">
           <el-form-item label="Время брони">
-            <el-time-picker
-              v-model="form.timeRange"
-              style="width: 200px;"
-              is-range
-              range-separator="-"
-              start-placeholder="от"
-              end-placeholder="до"
-              format="HH:mm"
-              value-format="HH:mm"
-              size="small"
-              :editable="false"
+            <el-time-select
+              v-model="form.timeFrom"
+              start="00:00"
+              end="23:59"
+              step="00:15"
+              style="width: 140px;"
+              
+            />
+          </el-form-item>
+          <el-form-item label="Время до">
+            <el-time-select
+              v-model="form.timeTo"
+              start="00:00"
+              end="23:59"
+              step="00:15"
+              style="width: 140px;"
+              placeholder=""
             />
           </el-form-item>
           <el-form-item label="Количество гостей">
@@ -86,6 +92,7 @@
 <script setup>
 import { computed, reactive, ref, watch } from "vue";
 import { ElMessage } from "element-plus";
+import dayjs from "dayjs";
 
 const props = defineProps({
   modelValue: {
@@ -105,7 +112,7 @@ const props = defineProps({
 const emit = defineEmits(["update:modelValue", "del", "creat"]);
 
 const form = reactive({
-  timeRange: [],
+  timeFrom: "", timeTo: "",
   person: "",
   name: "",
   tel: "",
@@ -121,19 +128,23 @@ const visible = computed({
 const numTable = computed(() => String(props.numberTable));
 
 const resetForm = () => {
-  form.timeRange = [];
+  const now = dayjs();
+  const start = now.minute(Math.floor(now.minute() / 15) * 15).second(0).format("HH:mm");
+  form.timeFrom = start;
+  form.timeTo = "";
   form.person = "";
   form.name = "";
   form.tel = "";
 };
 
 const emitCreate = () => {
-  if (form.timeRange.length !== 2 || !form.timeRange[0] || !form.timeRange[1] || !form.tel) {
-    ElMessage.warning("Укажите время и телефон");
+  const timeFrom = form.timeFrom;
+  const timeTo = form.timeTo;
+  if (!timeFrom || !form.tel) {
+    ElMessage.warning("����� ������� ����� � �������");
     return;
   }
-  const [timeFrom, timeTo] = form.timeRange;
-  const time = `${timeFrom}-${timeTo}`;
+  const time = timeTo ? `${timeFrom}-${timeTo}` : timeFrom;
   emit("creat", { time, person: form.person, name: form.name, tel: form.tel, numTable: numTable.value });
   visible.value = false;
 };
@@ -270,3 +281,13 @@ watch(
   }
 }
 </style>
+
+
+
+
+
+
+
+
+
+

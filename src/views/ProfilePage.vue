@@ -403,6 +403,14 @@ onMounted(async () => {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 4px;
+  flex-wrap: wrap;
+}
+.profile-form__actions .el-button {
+  flex: 1 1 200px;
+  margin-left: 0;
+}
+.profile-form__actions .el-button + .el-button {
+  margin-left: 0;
 }
 
 .schema-actions {
@@ -445,8 +453,16 @@ onMounted(async () => {
 .settings-form__actions {
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 8px;
+}
+.settings-form__actions .el-button {
+  flex: 1 1 200px;
+  margin-left: 0;
+}
+.settings-form__actions .el-button + .el-button {
+  margin-left: 0;
 }
 
 .profile-loader {
@@ -472,4 +488,3 @@ onMounted(async () => {
   color: var(--text-secondary);
 }
 </style>
-
