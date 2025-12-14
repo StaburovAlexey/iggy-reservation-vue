@@ -1,8 +1,10 @@
-<template>
+﻿<template>
   <header class="navbar">
-    <div class="navbar__brand" @click="refresh">
-      <div class="logo" />
-      <span class="navbar__title">IGGY Reservation</span>
+    <div class="navbar__left">
+      <div class="navbar__brand" @click="refresh">
+        <div class="logo" />
+        <span class="navbar__title">IGGY Reservation</span>
+      </div>
     </div>
     <el-dropdown trigger="click">
       <div class="navbar__menu-btn">
@@ -11,9 +13,9 @@
         <el-icon><ArrowDown /></el-icon>
       </div>
       <template #dropdown>
-        <el-dropdown-menu class="navbar__dropdown">
-          <el-dropdown-item class="navbar__user">
-            <el-avatar :size="40" :src="avatarUrl" class="navbar__avatar">{{ avatarFallback }}</el-avatar>
+          <el-dropdown-menu class="navbar__dropdown">
+            <el-dropdown-item class="navbar__user">
+              <el-avatar :size="40" :src="avatarUrl" class="navbar__avatar">{{ avatarFallback }}</el-avatar>
             <div class="navbar__user-info">
               <div class="navbar__user-name">{{ userName }}</div>
               <div class="navbar__user-mail">{{ userEmail }}</div>
@@ -21,6 +23,9 @@
           </el-dropdown-item>
           <el-dropdown-item divided @click="editProfile">
             Профиль
+          </el-dropdown-item>
+          <el-dropdown-item @click="goSchedule">
+            Расписание
           </el-dropdown-item>
           <el-dropdown-item v-if="isAdmin" @click="editSchema">
             Редактировать плана-схему
@@ -68,7 +73,7 @@ const userName = computed(
     user.value?.email ||
     "Пользователь"
 );
-const userEmail = computed(() => user.value?.email || user.value?.login || "нет e-mail");
+const userEmail = computed(() => user.value?.email || user.value?.login || "Нет e-mail");
 const avatarUrl = computed(() => user.value?.avatar || user.value?.user_metadata?.avatar_url || "");
 const avatarFallback = computed(() => (userName.value ? userName.value.slice(0, 1).toUpperCase() : "U"));
 
@@ -92,6 +97,10 @@ const nextThemeLabel = computed(() =>
 
 const refresh = () => {
   dataStore.fetchInfo().catch((error) => console.log(error));
+};
+
+const goSchedule = () => {
+  router.push("/schedule");
 };
 
 const toggleTheme = () => {
@@ -126,6 +135,12 @@ const logout = async () => {
   color: var(--text-primary);
   padding: 6px 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.navbar__left {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .navbar__brand {
@@ -194,5 +209,3 @@ const logout = async () => {
   color: var(--text-secondary);
 }
 </style>
-
-

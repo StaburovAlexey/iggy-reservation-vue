@@ -39,6 +39,15 @@ const routes = [
     component: () => import("../views/ProfilePage.vue"),
   },
   {
+    path: "/schedule",
+    name: "schedule",
+    meta: {
+      layout: "main",
+      auth: true,
+    },
+    component: () => import("../views/SchedulePage.vue"),
+  },
+  {
     path: "/edit-shema",
     name: "edit-shema",
     meta: {

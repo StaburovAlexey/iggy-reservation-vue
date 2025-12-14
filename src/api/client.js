@@ -138,6 +138,13 @@ export const api = {
   getSchema: () => apiClient.get("/schema"),
   saveSchema: (schema) => apiClient.post("/schema", { body: { schema } }),
   createTelegramLinkCode: () => apiClient.post("/settings/link-code"),
+  getEmployees: () => apiClient.get("/users"),
+  getSchedule: (params) => apiClient.get("/schedule", { params }),
+  saveScheduleForDate: (date, payload = {}) => {
+    const dateKey = encodeURIComponent(date);
+    const body = payload?.date ? payload : { ...payload, date };
+    return apiClient.post(`/schedule/${dateKey}`, { body });
+  },
 };
 
 export { API_BASE_URL, setToken, getToken, clearToken };
