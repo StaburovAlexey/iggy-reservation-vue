@@ -39,6 +39,15 @@ const routes = [
     component: () => import("../views/ProfilePage.vue"),
   },
   {
+    path: "/edit-shema",
+    name: "edit-shema",
+    meta: {
+      layout: "main",
+      auth: true,
+    },
+    component: () => import("../views/EditSchemaPage.vue"),
+  },
+  {
     path: "/magic-link",
     name: "magic-link",
     meta: {

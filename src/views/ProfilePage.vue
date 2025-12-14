@@ -57,6 +57,10 @@
           </div>
         </el-form>
 
+        <div v-if="isAdmin" class="schema-actions">
+          <el-button type="primary" plain @click="goEditSchema">Редактировать план-схему</el-button>
+        </div>
+
         <el-card v-if="isAdmin" class="invite-card" shadow="never">
           <div class="invite-card__header">
             <div>
@@ -353,6 +357,10 @@ const goHome = () => {
   router.push("/");
 };
 
+const goEditSchema = () => {
+  router.push("/edit-shema");
+};
+
 onMounted(async () => {
   await loadUser();
   await loadSettings();
@@ -404,6 +412,12 @@ onMounted(async () => {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 4px;
+}
+
+.schema-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 12px 0;
 }
 
 .invite-card,
