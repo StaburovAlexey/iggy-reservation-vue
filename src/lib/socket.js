@@ -6,7 +6,12 @@ let socket = null;
 const buildBaseUrl = () => {
   const envUrl = (import.meta.env.VITE_APP_API || API_BASE_URL || "").trim();
   if (envUrl) {
-    return envUrl.replace(/\/+$/, "");
+    try {
+      const parsed = new URL(envUrl.startsWith("http") ? envUrl : `http://${envUrl}`);
+      return parsed.origin;
+    } catch (_) {
+      return envUrl.replace(/\/+$/, "");
+    }
   }
   if (typeof window !== "undefined") {
     return window.location.origin;
