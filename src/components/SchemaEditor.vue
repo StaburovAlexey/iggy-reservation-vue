@@ -311,27 +311,11 @@ const normalizeOpacity = (value) => {
   return Math.max(0, Math.min(1, num));
 };
 
-const initialTables = [
-  { id: "11", label: "Pull", shape: "rect", x: 35, y: 60, width: 40, height: 30, rx: 6, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
-  { id: "8", label: "8", shape: "rect", x: 107, y: 40, width: 40, height: 30, rx: 6, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
-  { id: "9", label: "9", shape: "rect", x: 170, y: 60, width: 40, height: 30, rx: 6, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
-  { id: "10", label: "10", shape: "rect", x: 107, y: 90, width: 40, height: 30, rx: 6, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
-  { id: "1", label: "1", shape: "rect", x: 35, y: 140, width: 60, height: 30, rx: 6, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
-  { id: "2", label: "2", shape: "circle", x: 190, y: 140, r: 16, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
-  { id: "3", label: "3", shape: "rect", x: 35, y: 210, width: 60, height: 30, rx: 6, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
-  { id: "4", label: "4", shape: "circle", x: 90, y: 210, r: 16, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
-  { id: "5", label: "5", shape: "rect", x: 140, y: 210, width: 60, height: 30, rx: 6, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
-  { id: "6", label: "6", shape: "circle", x: 190, y: 210, r: 16, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
-  { id: "7", label: "7", shape: "circle", x: 35, y: 280, r: 16, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
-  { id: "12", label: "Room", shape: "rect", x: 107, y: 60, width: 214, height: 120, rx: 12, z: 1, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
-];
-
 const defaultBaseColor = "#38bdf8";
 const defaultBookedColor = "#ef4444";
 const defaultSeparatorThickness = 2;
-const initialSeparators = [
-  { id: "sep-1", y: 120, x: schemaSize.width / 2, orientation: "h", thickness: defaultSeparatorThickness },
-];
+const initialTables = [];
+const initialSeparators = [];
 
 const tables = ref(initialTables.map((item) => ({ ...item })));
 const selectedId = ref(tables.value[0]?.id || "");
@@ -343,6 +327,7 @@ const colors = reactive({
   base: defaultBaseColor,
   booked: defaultBookedColor,
 });
+const lastLoadedSchema = ref(null);
 
 const dragState = reactive({
   active: false,
@@ -550,9 +535,11 @@ const stopDrag = () => {
 };
 
 const resetLayout = () => {
-  tables.value = initialTables.map((item) => ({ ...item }));
+  const baseTables = (lastLoadedSchema.value?.tables || initialTables).map((item) => ({ ...item }));
+  const baseSeparators = (lastLoadedSchema.value?.separators || initialSeparators).map((item) => ({ ...item }));
+  tables.value = baseTables;
   selectedId.value = tables.value[0]?.id || "";
-  separators.value = initialSeparators.map((item) => ({ ...item }));
+  separators.value = baseSeparators;
   selectedSeparatorId.value = separators.value[0]?.id || "";
   newSeparator.orientation = "h";
   newSeparator.pos = Math.round(schemaSize.height / 2);
@@ -569,8 +556,8 @@ const resetLayout = () => {
   newTable.opacityBase = 1;
   newTable.colorBooked = defaultBookedColor;
   newTable.opacityBooked = 1;
-  colors.base = defaultBaseColor;
-  colors.booked = defaultBookedColor;
+  colors.base = lastLoadedSchema.value?.colors?.base || defaultBaseColor;
+  colors.booked = lastLoadedSchema.value?.colors?.booked || defaultBookedColor;
 };
 
 const addTable = () => {
@@ -679,6 +666,7 @@ const emitSaveSchema = () => {
 
 const applySchema = (schema) => {
   if (!schema || typeof schema !== "object") return;
+  lastLoadedSchema.value = schema;
   if (Array.isArray(schema.tables)) {
     tables.value = schema.tables.map((table) => ({ ...table }));
     selectedId.value = tables.value[0]?.id || "";
@@ -687,10 +675,8 @@ const applySchema = (schema) => {
     separators.value = schema.separators.map((item) => ({ ...item }));
     selectedSeparatorId.value = separators.value[0]?.id || "";
   }
-  if (schema.colors) {
-    colors.base = schema.colors.base || defaultBaseColor;
-    colors.booked = schema.colors.booked || defaultBookedColor;
-  }
+  colors.base = (schema.colors && schema.colors.base) || defaultBaseColor;
+  colors.booked = (schema.colors && schema.colors.booked) || defaultBookedColor;
 };
 
 watch(
@@ -825,6 +811,4 @@ onBeforeUnmount(() => {
   }
 }
 </style>
-
-
 

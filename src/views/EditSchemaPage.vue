@@ -1,13 +1,13 @@
-<template>
+﻿<template>
   <div class="edit-schema">
     <NavBar />
     <div class="edit-schema__body">
       <el-card class="edit-schema__card" shadow="hover">
         <div class="edit-schema__header">
           <div>
-            <h2 class="edit-schema__title">Редактирование план-схемы</h2>
+            <h2 class="edit-schema__title">Редактирование плана-схемы</h2>
             <p class="edit-schema__subtitle">
-              Перетаскивайте столы на схеме или меняйте координаты вручную в панели справа.
+              Настройте схему: перетаскивайте столы и линии, чтобы задать расположение.
             </p>
           </div>
           <el-button size="small" @click="goBack">Назад</el-button>
@@ -19,41 +19,42 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import NavBar from "@/components/NavBar.vue";
 import SchemaEditor from "@/components/SchemaEditor.vue";
+import { api } from "@/api/client";
 
 const router = useRouter();
 const schemaData = ref(null);
 
-const STORAGE_KEY = "schema-config";
-
 const goBack = () => router.push("/profile");
 
-const loadSchema = () => {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return;
+const loadSchema = async () => {
   try {
-    schemaData.value = JSON.parse(raw);
+    const resp = await api.getSchema();
+    schemaData.value = resp?.schema ?? resp ?? null;
   } catch (error) {
     console.log(error);
+    ElMessage.warning("Не удалось загрузить схему из API, показана пустая/последняя версия.");
   }
 };
 
-const handleSaveSchema = (payload) => {
+const handleSaveSchema = async (payload) => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-    ElMessage.success("Схема сохранена (локально)");
-    schemaData.value = payload;
+    const resp = await api.saveSchema(payload);
+    schemaData.value = resp?.schema ?? payload;
+    ElMessage.success("Схема сохранена через API");
   } catch (error) {
     console.log(error);
-    ElMessage.error("Не удалось сохранить схему");
+    ElMessage.error("Ошибка сохранения схемы через API");
   }
 };
 
-loadSchema();
+onMounted(() => {
+  loadSchema();
+});
 </script>
 
 <style scoped lang="scss">

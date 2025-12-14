@@ -74,12 +74,13 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch, onMounted, onUnmounted } from "vue";
+import { computed, reactive, ref, watch, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
 import ModalApp from "./ModalApp.vue";
 import { useDataStore } from "@/store/dataBase";
 import { useAuthStore } from "@/store/auth";
+import { api } from "@/api/client";
 
 const dataStore = useDataStore();
 const authStore = useAuthStore();
@@ -108,7 +109,6 @@ const tables = reactive({
   room: [],
 });
 
-const STORAGE_KEY = "schema-config";
 const SCHEMA_WIDTH = 214;
 const SCHEMA_HEIGHT = 325;
 
@@ -118,23 +118,7 @@ const normalizeOpacity = (value) => {
   return Math.max(0, Math.min(1, num));
 };
 
-const defaultTables = [
-  { id: "11", label: "Pull", shape: "rect", x: 35, y: 60, width: 40, height: 30, rx: 6, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
-  { id: "8", label: "8", shape: "rect", x: 107, y: 40, width: 40, height: 30, rx: 6, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
-  { id: "9", label: "9", shape: "rect", x: 170, y: 60, width: 40, height: 30, rx: 6, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
-  { id: "10", label: "10", shape: "rect", x: 107, y: 90, width: 40, height: 30, rx: 6, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
-  { id: "1", label: "1", shape: "rect", x: 35, y: 140, width: 60, height: 30, rx: 6, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
-  { id: "2", label: "2", shape: "circle", x: 190, y: 140, r: 16, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
-  { id: "3", label: "3", shape: "rect", x: 35, y: 210, width: 60, height: 30, rx: 6, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
-  { id: "4", label: "4", shape: "circle", x: 90, y: 210, r: 16, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
-  { id: "5", label: "5", shape: "rect", x: 140, y: 210, width: 60, height: 30, rx: 6, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
-  { id: "6", label: "6", shape: "circle", x: 190, y: 210, r: 16, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
-  { id: "7", label: "7", shape: "circle", x: 35, y: 280, r: 16, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
-  { id: "12", label: "12", shape: "rect", x: SCHEMA_WIDTH / 2, y: 60, width: SCHEMA_WIDTH, height: 120, rx: 12, z: 1, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
-];
-
 const schemaConfig = ref(null);
-const defaultSeparators = [{ id: "sep-1", orientation: "h", y: 120, x: SCHEMA_WIDTH / 2, thickness: 2 }];
 
 const tablesWithFill = computed(() => {
   const source = schemaConfig.value?.tables;
@@ -184,7 +168,7 @@ const tablesWithFill = computed(() => {
     };
   };
 
-  const tablesSource = Array.isArray(source) && source.length ? source : defaultTables;
+  const tablesSource = Array.isArray(source) ? source : [];
   const normalized = tablesSource
     .map((item) => mapTable(item))
     .sort((a, b) => (a.z ?? 0) - (b.z ?? 0) || a.id.localeCompare(b.id));
@@ -194,7 +178,7 @@ const tablesWithFill = computed(() => {
 
 const separatorLines = computed(() => {
   const source = schemaConfig.value?.separators;
-  const lines = Array.isArray(source) && source.length ? source : defaultSeparators;
+  const lines = Array.isArray(source) ? source : [];
   return lines.map((line) => ({
     id: line.id || `sep-${line.orientation || "h"}-${line.y ?? line.x ?? 0}`,
     orientation: line.orientation === "v" ? "v" : "h",
@@ -300,11 +284,10 @@ const openRoom = () => openTable("12");
 
 defineExpose({ openRoom });
 
-const loadSchema = () => {
+const loadSchema = async () => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    schemaConfig.value = JSON.parse(raw);
+    const resp = await api.getSchema();
+    schemaConfig.value = resp?.schema ?? resp ?? null;
   } catch (error) {
     console.log(error);
   }
@@ -312,11 +295,6 @@ const loadSchema = () => {
 
 onMounted(() => {
   loadSchema();
-  window.addEventListener("storage", loadSchema);
-});
-
-onUnmounted(() => {
-  window.removeEventListener("storage", loadSchema);
 });
 
 watch(date, () => fetchReservations(), { immediate: true });

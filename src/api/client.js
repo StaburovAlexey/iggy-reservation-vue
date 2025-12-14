@@ -135,6 +135,8 @@ export const api = {
   updateSettings: (payload) => apiClient.post("/settings/add", { body: payload }),
   updateProfile: (payload) => apiClient.put("/users/me", { body: payload }),
   uploadFile: (fileOrFormData) => apiClient.upload("/upload", fileOrFormData),
+  getSchema: () => apiClient.get("/schema"),
+  saveSchema: (schema) => apiClient.post("/schema", { body: { schema } }),
 };
 
 export { API_BASE_URL, setToken, getToken, clearToken };
