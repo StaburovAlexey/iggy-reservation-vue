@@ -47,105 +47,191 @@
     </div>
     <div class="schema-editor__panel">
       <div class="panel-block">
+        <h3 class="panel-title">Цвета столов</h3>
+        <div class="color-row">
+          <span>Обычный</span>
+          <el-color-picker v-model="colors.base" size="small" />
+        </div>
+        <div class="color-row">
+          <span>Забронирован</span>
+          <el-color-picker v-model="colors.booked" size="small" />
+        </div>
+      </div>
+
+      <div class="panel-block">
         <h3 class="panel-title">Параметры стола</h3>
-        <el-select v-model="selectedId" placeholder="Выберите стол" size="small">
-          <el-option
-            v-for="table in tables"
-            :key="table.id"
-            :label="`Стол ${table.label}`"
-            :value="table.id"
-          />
-        </el-select>
+        <div class="field">
+          <span class="field-label">Выберите стол</span>
+          <el-select v-model="selectedId" placeholder="Стол" size="small">
+            <el-option
+              v-for="table in tables"
+              :key="table.id"
+              :label="`Стол ${table.label}`"
+              :value="table.id"
+            />
+          </el-select>
+        </div>
 
         <div v-if="currentTable" class="panel-grid">
-          <el-input-number v-model="currentTable.x" :min="0" :max="schemaSize.width" label="X" size="small" />
-          <el-input-number v-model="currentTable.y" :min="0" :max="schemaSize.height" label="Y" size="small" />
-          <el-color-picker v-model="currentTable.color" size="small" />
+          <div class="field">
+            <span class="field-label">ID стола</span>
+            <el-input v-model="currentTable.id" size="small" @input="onTableIdChange" />
+          </div>
+          <div class="field">
+            <span class="field-label">Название/номер</span>
+            <el-input v-model="currentTable.label" size="small" />
+          </div>
+          <div class="field">
+            <span class="field-label">X</span>
+            <el-input-number v-model="currentTable.x" :min="0" :max="schemaSize.width" size="small" />
+          </div>
+          <div class="field">
+            <span class="field-label">Y</span>
+            <el-input-number v-model="currentTable.y" :min="0" :max="schemaSize.height" size="small" />
+          </div>
 
           <template v-if="currentTable.shape === 'rect'">
-            <el-input-number v-model="currentTable.width" :min="10" label="Ширина" size="small" />
-            <el-input-number v-model="currentTable.height" :min="10" label="Высота" size="small" />
-            <el-input-number v-model="currentTable.rx" :min="0" :max="30" label="Скругление" size="small" />
+            <div class="field">
+              <span class="field-label">Ширина</span>
+              <el-input-number v-model="currentTable.width" :min="10" size="small" />
+            </div>
+            <div class="field">
+              <span class="field-label">Высота</span>
+              <el-input-number v-model="currentTable.height" :min="10" size="small" />
+            </div>
+            <div class="field">
+              <span class="field-label">Скругление</span>
+              <el-input-number v-model="currentTable.rx" :min="0" :max="30" size="small" />
+            </div>
           </template>
 
           <template v-else>
-            <el-input-number v-model="currentTable.r" :min="8" :max="60" label="Радиус" size="small" />
+            <div class="field">
+              <span class="field-label">Радиус</span>
+              <el-input-number v-model="currentTable.r" :min="8" :max="60" size="small" />
+            </div>
           </template>
-          <el-input-number v-model="currentTable.z" :min="0" label="Z" size="small" />
+          <div class="field">
+            <span class="field-label">Z-слой</span>
+            <el-input-number v-model="currentTable.z" :min="0" size="small" />
+          </div>
         </div>
         <div v-if="currentTable" class="schema-editor__actions schema-editor__actions--gap">
+          <el-checkbox v-model="currentTable.booked">Забронирован (превью)</el-checkbox>
           <el-button type="danger" size="small" @click="deleteTable(currentTable.id)">Удалить стол</el-button>
         </div>
       </div>
 
       <div class="panel-block">
         <h3 class="panel-title">Сепараторы</h3>
-        <el-select v-model="selectedSeparatorId" placeholder="Выберите линию" size="small">
-          <el-option
-            v-for="separator in separators"
-            :key="separator.id"
-            :label="`Линия ${separator.id}`"
-            :value="separator.id"
-          />
-        </el-select>
+        <div class="field">
+          <span class="field-label">Выберите линию</span>
+          <el-select v-model="selectedSeparatorId" placeholder="Линия" size="small">
+            <el-option
+              v-for="separator in separators"
+              :key="separator.id"
+              :label="`Линия ${separator.id}`"
+              :value="separator.id"
+            />
+          </el-select>
+        </div>
         <div v-if="currentSeparator" class="panel-grid">
           <template v-if="currentSeparator.orientation === 'v'">
-            <el-input-number v-model="currentSeparator.x" :min="0" :max="schemaSize.width" label="X" size="small" />
+            <div class="field">
+              <span class="field-label">X линии</span>
+              <el-input-number v-model="currentSeparator.x" :min="0" :max="schemaSize.width" size="small" />
+            </div>
           </template>
           <template v-else>
-            <el-input-number v-model="currentSeparator.y" :min="0" :max="schemaSize.height" label="Y" size="small" />
+            <div class="field">
+              <span class="field-label">Y линии</span>
+              <el-input-number v-model="currentSeparator.y" :min="0" :max="schemaSize.height" size="small" />
+            </div>
           </template>
-          <el-select
-            v-model="currentSeparator.orientation"
-            placeholder="Ориентация"
-            size="small"
-            @change="onSeparatorOrientationChange"
-          >
-            <el-option label="Горизонтальная" value="h" />
-            <el-option label="Вертикальная" value="v" />
-          </el-select>
+          <div class="field">
+            <span class="field-label">Ориентация</span>
+            <el-select
+              v-model="currentSeparator.orientation"
+              placeholder="Ориентация"
+              size="small"
+              @change="onSeparatorOrientationChange"
+            >
+              <el-option label="Горизонтальная" value="h" />
+              <el-option label="Вертикальная" value="v" />
+            </el-select>
+          </div>
         </div>
       </div>
 
       <div class="panel-block">
         <h3 class="panel-title">Создание</h3>
         <div class="panel-grid">
-          <el-input v-model="newTable.label" placeholder="Название/номер стола" size="small" />
-          <el-select v-model="newTable.shape" placeholder="Форма стола" size="small">
-            <el-option label="Прямоугольник" value="rect" />
-            <el-option label="Круг" value="circle" />
-          </el-select>
-          <el-color-picker v-model="newTable.color" size="small" />
+          <div class="field">
+            <span class="field-label">ID стола</span>
+            <el-input v-model="newTable.id" placeholder="Оставьте пустым для авто" size="small" />
+          </div>
+          <div class="field">
+            <span class="field-label">Название/номер стола</span>
+            <el-input v-model="newTable.label" placeholder="Например, 5" size="small" />
+          </div>
+          <div class="field">
+            <span class="field-label">Форма стола</span>
+            <el-select v-model="newTable.shape" placeholder="Форма" size="small">
+              <el-option label="Прямоугольник" value="rect" />
+              <el-option label="Круг" value="circle" />
+            </el-select>
+          </div>
 
           <template v-if="newTable.shape === 'rect'">
-            <el-input-number v-model="newTable.width" :min="10" label="Ширина" size="small" />
-            <el-input-number v-model="newTable.height" :min="10" label="Высота" size="small" />
-            <el-input-number v-model="newTable.rx" :min="0" :max="30" label="Скругление" size="small" />
+            <div class="field">
+              <span class="field-label">Ширина</span>
+              <el-input-number v-model="newTable.width" :min="10" size="small" />
+            </div>
+            <div class="field">
+              <span class="field-label">Высота</span>
+              <el-input-number v-model="newTable.height" :min="10" size="small" />
+            </div>
+            <div class="field">
+              <span class="field-label">Скругление</span>
+              <el-input-number v-model="newTable.rx" :min="0" :max="30" size="small" />
+            </div>
           </template>
           <template v-else>
-            <el-input-number v-model="newTable.r" :min="8" :max="60" label="Радиус" size="small" />
+            <div class="field">
+              <span class="field-label">Радиус</span>
+              <el-input-number v-model="newTable.r" :min="8" :max="60" size="small" />
+            </div>
           </template>
-          <el-input-number v-model="newTable.z" :min="0" label="Z" size="small" />
+          <div class="field">
+            <span class="field-label">Z-слой</span>
+            <el-input-number v-model="newTable.z" :min="0" size="small" />
+          </div>
         </div>
 
         <div class="schema-editor__actions schema-editor__actions--gap">
           <el-button type="primary" size="small" @click="addTable">Добавить стол</el-button>
+          <el-button size="small" @click="emitSaveSchema">Сохранить схему</el-button>
         </div>
 
         <div class="panel-divider panel-divider--sub"></div>
 
         <div class="panel-grid">
-          <el-input-number
-            v-model="newSeparator.pos"
-            :min="0"
-            :max="newSeparator.orientation === 'v' ? schemaSize.width : schemaSize.height"
-            :label="newSeparator.orientation === 'v' ? 'X новой линии' : 'Y новой линии'"
-            size="small"
-          />
-          <el-select v-model="newSeparator.orientation" placeholder="Ориентация линии" size="small">
-            <el-option label="Горизонтальная" value="h" />
-            <el-option label="Вертикальная" value="v" />
-          </el-select>
+          <div class="field">
+            <span class="field-label">{{ newSeparator.orientation === 'v' ? 'X новой линии' : 'Y новой линии' }}</span>
+            <el-input-number
+              v-model="newSeparator.pos"
+              :min="0"
+              :max="newSeparator.orientation === 'v' ? schemaSize.width : schemaSize.height"
+              size="small"
+            />
+          </div>
+          <div class="field">
+            <span class="field-label">Ориентация линии</span>
+            <el-select v-model="newSeparator.orientation" placeholder="Ориентация" size="small">
+              <el-option label="Горизонтальная" value="h" />
+              <el-option label="Вертикальная" value="v" />
+            </el-select>
+          </div>
         </div>
 
         <div class="schema-editor__actions schema-editor__actions--gap">
@@ -158,26 +244,36 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, reactive, ref } from "vue";
+import { computed, onBeforeUnmount, reactive, ref, watch } from "vue";
+
+const props = defineProps({
+  schemaData: {
+    type: Object,
+    default: () => null,
+  },
+});
+
+const emit = defineEmits(["save-schema"]);
 
 const schemaSize = { width: 214, height: 325 };
 
 const initialTables = [
-  { id: "11", label: "Pull", shape: "rect", x: 35, y: 60, width: 40, height: 30, rx: 6, z: 2, color: defaultTableColor },
-  { id: "8", label: "8", shape: "rect", x: 107, y: 40, width: 40, height: 30, rx: 6, z: 2, color: defaultTableColor },
-  { id: "9", label: "9", shape: "rect", x: 170, y: 60, width: 40, height: 30, rx: 6, z: 2, color: defaultTableColor },
-  { id: "10", label: "10", shape: "rect", x: 107, y: 90, width: 40, height: 30, rx: 6, z: 2, color: defaultTableColor },
-  { id: "1", label: "1", shape: "rect", x: 35, y: 140, width: 60, height: 30, rx: 6, z: 2, color: defaultTableColor },
-  { id: "2", label: "2", shape: "circle", x: 190, y: 140, r: 16, z: 2, color: defaultTableColor },
-  { id: "3", label: "3", shape: "rect", x: 35, y: 210, width: 60, height: 30, rx: 6, z: 2, color: defaultTableColor },
-  { id: "4", label: "4", shape: "circle", x: 90, y: 210, r: 16, z: 2, color: defaultTableColor },
-  { id: "5", label: "5", shape: "rect", x: 140, y: 210, width: 60, height: 30, rx: 6, z: 2, color: defaultTableColor },
-  { id: "6", label: "6", shape: "circle", x: 190, y: 210, r: 16, z: 2, color: defaultTableColor },
-  { id: "7", label: "7", shape: "circle", x: 35, y: 280, r: 16, z: 2, color: defaultTableColor },
-  { id: "12", label: "Room", shape: "rect", x: 107, y: 60, width: 214, height: 120, rx: 12, z: 1, color: "#a78bfa" },
+  { id: "11", label: "Pull", shape: "rect", x: 35, y: 60, width: 40, height: 30, rx: 6, z: 2, booked: false },
+  { id: "8", label: "8", shape: "rect", x: 107, y: 40, width: 40, height: 30, rx: 6, z: 2, booked: false },
+  { id: "9", label: "9", shape: "rect", x: 170, y: 60, width: 40, height: 30, rx: 6, z: 2, booked: false },
+  { id: "10", label: "10", shape: "rect", x: 107, y: 90, width: 40, height: 30, rx: 6, z: 2, booked: false },
+  { id: "1", label: "1", shape: "rect", x: 35, y: 140, width: 60, height: 30, rx: 6, z: 2, booked: false },
+  { id: "2", label: "2", shape: "circle", x: 190, y: 140, r: 16, z: 2, booked: false },
+  { id: "3", label: "3", shape: "rect", x: 35, y: 210, width: 60, height: 30, rx: 6, z: 2, booked: false },
+  { id: "4", label: "4", shape: "circle", x: 90, y: 210, r: 16, z: 2, booked: false },
+  { id: "5", label: "5", shape: "rect", x: 140, y: 210, width: 60, height: 30, rx: 6, z: 2, booked: false },
+  { id: "6", label: "6", shape: "circle", x: 190, y: 210, r: 16, z: 2, booked: false },
+  { id: "7", label: "7", shape: "circle", x: 35, y: 280, r: 16, z: 2, booked: false },
+  { id: "12", label: "Room", shape: "rect", x: 107, y: 60, width: 214, height: 120, rx: 12, z: 1, booked: false },
 ];
 
-const defaultTableColor = "#38bdf8";
+const defaultBaseColor = "#38bdf8";
+const defaultBookedColor = "#ef4444";
 const defaultSeparatorThickness = 2;
 const initialSeparators = [
   { id: "sep-1", y: 120, x: schemaSize.width / 2, orientation: "h", thickness: defaultSeparatorThickness },
@@ -189,6 +285,10 @@ const svgRef = ref(null);
 const rafId = ref(0);
 const separators = ref(initialSeparators.map((item) => ({ ...item })));
 const selectedSeparatorId = ref(separators.value[0]?.id || "");
+const colors = reactive({
+  base: defaultBaseColor,
+  booked: defaultBookedColor,
+});
 
 const dragState = reactive({
   active: false,
@@ -218,6 +318,7 @@ const currentSeparator = computed(
 );
 
 const newTable = reactive({
+  id: "",
   label: "",
   shape: "rect",
   width: 40,
@@ -225,7 +326,7 @@ const newTable = reactive({
   rx: 6,
   r: 16,
   z: 2,
-  color: defaultTableColor,
+  booked: false,
 });
 const newSeparator = reactive({
   orientation: "h",
@@ -243,9 +344,27 @@ const shapeAttrs = (table) => {
 
 const tableFill = (id) => {
   const table = tables.value.find((item) => item.id === id);
-  const color = table?.color || defaultTableColor;
-  return color;
+  if (!table) return colors.base;
+  return table.booked ? colors.booked : colors.base;
 };
+
+const schemaPayload = computed(() => ({
+  tables: tables.value.map((table) => ({
+    id: table.id,
+    label: table.label,
+    shape: table.shape,
+    x: table.x,
+    y: table.y,
+    width: table.width,
+    height: table.height,
+    rx: table.rx,
+    r: table.r,
+    z: table.z,
+    booked: table.booked,
+  })),
+  separators: separators.value.map((item) => ({ ...item })),
+  colors: { ...colors },
+}));
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
@@ -339,19 +458,30 @@ const resetLayout = () => {
   selectedSeparatorId.value = separators.value[0]?.id || "";
   newSeparator.orientation = "h";
   newSeparator.pos = Math.round(schemaSize.height / 2);
+  newTable.id = "";
+  newTable.label = "";
+  newTable.shape = "rect";
+  newTable.width = 40;
+  newTable.height = 30;
+  newTable.rx = 6;
+  newTable.r = 16;
+  newTable.z = 2;
+  colors.base = defaultBaseColor;
+  colors.booked = defaultBookedColor;
 };
 
 const addTable = () => {
-  const label = newTable.label.trim() || String(tables.value.length + 1);
+  const customId = (newTable.id || "").trim();
+  const label = (newTable.label || "").trim();
   const shape = newTable.shape === "circle" ? "circle" : "rect";
   const base = {
-    id: `${Date.now()}`,
+    id: customId || `${Date.now()}`,
     label,
     shape,
     x: schemaSize.width / 2,
     y: schemaSize.height / 2,
     z: Number.isFinite(newTable.z) ? newTable.z : 2,
-    color: newTable.color || defaultTableColor,
+    booked: false,
   };
   const size =
     shape === "circle"
@@ -363,7 +493,14 @@ const addTable = () => {
         };
   tables.value.push({ ...base, ...size });
   selectedId.value = base.id;
+  newTable.id = "";
   newTable.label = "";
+  newTable.shape = "rect";
+  newTable.width = 40;
+  newTable.height = 30;
+  newTable.rx = 6;
+  newTable.r = 16;
+  newTable.z = 2;
 };
 
 const deleteTable = (id) => {
@@ -396,6 +533,18 @@ const addSeparator = () => {
   selectedSeparatorId.value = id;
 };
 
+const onTableIdChange = (value) => {
+  if (!currentTable.value) return;
+  const newId = String(value || "").trim();
+  if (!newId) {
+    // Если поле пустое, не меняем id и возвращаем отображаемое значение
+    currentTable.value.id = selectedId.value;
+    return;
+  }
+  selectedId.value = newId;
+  currentTable.value.id = newId;
+};
+
 const onSeparatorOrientationChange = (value) => {
   const sep = separators.value.find((item) => item.id === selectedSeparatorId.value);
   if (!sep) return;
@@ -408,6 +557,32 @@ const onSeparatorOrientationChange = (value) => {
     sep.y = schemaSize.height / 2;
   }
 };
+
+const emitSaveSchema = () => {
+  emit("save-schema", schemaPayload.value);
+};
+
+const applySchema = (schema) => {
+  if (!schema || typeof schema !== "object") return;
+  if (Array.isArray(schema.tables)) {
+    tables.value = schema.tables.map((table) => ({ ...table }));
+    selectedId.value = tables.value[0]?.id || "";
+  }
+  if (Array.isArray(schema.separators)) {
+    separators.value = schema.separators.map((item) => ({ ...item }));
+    selectedSeparatorId.value = separators.value[0]?.id || "";
+  }
+  if (schema.colors) {
+    colors.base = schema.colors.base || defaultBaseColor;
+    colors.booked = schema.colors.booked || defaultBookedColor;
+  }
+};
+
+watch(
+  () => props.schemaData,
+  (val) => applySchema(val),
+  { immediate: true, deep: true }
+);
 
 onBeforeUnmount(() => {
   window.removeEventListener("pointermove", onPointerMove);
@@ -489,9 +664,27 @@ onBeforeUnmount(() => {
   gap: 8px;
 }
 
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 .schema-editor__actions {
   display: flex;
   justify-content: flex-end;
+}
+
+.color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .schema-editor__actions--gap {

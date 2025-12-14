@@ -20,7 +20,16 @@
         xmlns="http://www.w3.org/2000/svg"
       >
         <rect x="0" y="0" width="100%" fill="var(--canvas-bg)" />
-        <line x1="0" y1="120" x2="100%" y2="120" stroke="var(--border-color)" stroke-width="2" />
+        <line
+          v-for="line in separatorLines"
+          :key="line.id"
+          :x1="line.orientation === 'v' ? line.x : 0"
+          :y1="line.orientation === 'v' ? 0 : line.y"
+          :x2="line.orientation === 'v' ? line.x : SCHEMA_WIDTH"
+          :y2="line.orientation === 'v' ? SCHEMA_HEIGHT : line.y"
+          :stroke-width="line.thickness || 2"
+          stroke="var(--border-color)"
+        />
 
         <!-- Зал (12) -->
         <g class="hall" @click="openRoom" v-if="!isRoomReserved">
@@ -72,7 +81,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch } from "vue";
+import { computed, reactive, ref, watch, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
 import ModalApp from "./ModalApp.vue";
@@ -106,19 +115,72 @@ const tables = reactive({
   room: [],
 });
 
-const svgTables = [
-  { id: "11", label: "Pull", shape: "rect", transform: "translate(35,60)", shapeProps: { x: -20, y: -15, width: 40, height: 30, rx: 6 } },
-  { id: "8", label: "8", shape: "rect", transform: "translate(107,40)", shapeProps: { x: -20, y: -15, width: 40, height: 30, rx: 6 } },
-  { id: "9", label: "9", shape: "rect", transform: "translate(170,60)", shapeProps: { x: -20, y: -15, width: 40, height: 30, rx: 6 } },
-  { id: "10", label: "10", shape: "rect", transform: "translate(107,90)", shapeProps: { x: -20, y: -15, width: 40, height: 30, rx: 6 } },
-  { id: "1", label: "1", shape: "rect", transform: "translate(35,140)", shapeProps: { x: -30, y: -15, width: 60, height: 30, rx: 6 } },
-  { id: "2", label: "2", shape: "circle", transform: "translate(190,140)", shapeProps: { r: 16 } },
-  { id: "3", label: "3", shape: "rect", transform: "translate(35,210)", shapeProps: { x: -30, y: -15, width: 60, height: 30, rx: 6 } },
-  { id: "4", label: "4", shape: "circle", transform: "translate(90,210)", shapeProps: { r: 16 } },
-  { id: "5", label: "5", shape: "rect", transform: "translate(140,210)", shapeProps: { x: -30, y: -15, width: 60, height: 30, rx: 6 } },
-  { id: "6", label: "6", shape: "circle", transform: "translate(190,210)", shapeProps: { r: 16 } },
-  { id: "7", label: "7", shape: "circle", transform: "translate(35,280)", shapeProps: { r: 16 } },
+const STORAGE_KEY = "schema-config";
+const SCHEMA_WIDTH = 214;
+const SCHEMA_HEIGHT = 325;
+
+const defaultTables = [
+  { id: "11", label: "Pull", shape: "rect", x: 35, y: 60, width: 40, height: 30, rx: 6 },
+  { id: "8", label: "8", shape: "rect", x: 107, y: 40, width: 40, height: 30, rx: 6 },
+  { id: "9", label: "9", shape: "rect", x: 170, y: 60, width: 40, height: 30, rx: 6 },
+  { id: "10", label: "10", shape: "rect", x: 107, y: 90, width: 40, height: 30, rx: 6 },
+  { id: "1", label: "1", shape: "rect", x: 35, y: 140, width: 60, height: 30, rx: 6 },
+  { id: "2", label: "2", shape: "circle", x: 190, y: 140, r: 16 },
+  { id: "3", label: "3", shape: "rect", x: 35, y: 210, width: 60, height: 30, rx: 6 },
+  { id: "4", label: "4", shape: "circle", x: 90, y: 210, r: 16 },
+  { id: "5", label: "5", shape: "rect", x: 140, y: 210, width: 60, height: 30, rx: 6 },
+  { id: "6", label: "6", shape: "circle", x: 190, y: 210, r: 16 },
+  { id: "7", label: "7", shape: "circle", x: 35, y: 280, r: 16 },
 ];
+
+const schemaConfig = ref(null);
+const defaultSeparators = [{ id: "sep-1", orientation: "h", y: 120, x: SCHEMA_WIDTH / 2, thickness: 2 }];
+
+const svgTables = computed(() => {
+  const source = schemaConfig.value?.tables;
+  const colors = schemaConfig.value?.colors;
+
+  const mapTable = (table) => {
+    const shape = table.shape === "circle" ? "circle" : "rect";
+    if (shape === "circle") {
+      return {
+        id: String(table.id),
+        label: table.label || String(table.id),
+        shape,
+        transform: `translate(${table.x ?? 0},${table.y ?? 0})`,
+        shapeProps: { r: table.r ?? 16 },
+      };
+    }
+    const width = table.width ?? 40;
+    const height = table.height ?? 30;
+    return {
+      id: String(table.id),
+      label: table.label || String(table.id),
+      shape,
+      transform: `translate(${table.x ?? 0},${table.y ?? 0})`,
+      shapeProps: { x: -width / 2, y: -height / 2, width, height, rx: table.rx ?? 6 },
+    };
+  };
+
+  const tablesSource = Array.isArray(source) && source.length ? source : defaultTables;
+  const normalized = tablesSource
+    .filter((item) => String(item.id) !== "12")
+    .map((item) => mapTable(item));
+
+  return normalized;
+});
+
+const separatorLines = computed(() => {
+  const source = schemaConfig.value?.separators;
+  const lines = Array.isArray(source) && source.length ? source : defaultSeparators;
+  return lines.map((line) => ({
+    id: line.id || `sep-${line.orientation || "h"}-${line.y ?? line.x ?? 0}`,
+    orientation: line.orientation === "v" ? "v" : "h",
+    x: line.x ?? SCHEMA_WIDTH / 2,
+    y: line.y ?? SCHEMA_HEIGHT / 2,
+    thickness: line.thickness || 2,
+  }));
+});
 
 const selectedTableReservations = computed(() =>
   selectedTable.value ? filterByTable(selectedTable.value) : []
@@ -201,8 +263,10 @@ const creatReserve = async (data) => {
 
 const tableColor = (tableId) => {
   const has = filterByTable(tableId).length > 0;
-  if (tableId === "12") return has ? "#ef4444" : "#22c55e";
-  return has ? "#ef4444" : "#38bdf8";
+  const baseColor = schemaConfig.value?.colors?.base || "#38bdf8";
+  const bookedColor = schemaConfig.value?.colors?.booked || "#ef4444";
+  if (tableId === "12") return has ? bookedColor : "#22c55e";
+  return has ? bookedColor : baseColor;
 };
 
 const openTable = (tableId) => {
@@ -213,6 +277,20 @@ const openTable = (tableId) => {
 const openRoom = () => openTable("12");
 
 defineExpose({ openRoom });
+
+const loadSchema = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    schemaConfig.value = JSON.parse(raw);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+onMounted(() => {
+  loadSchema();
+});
 
 watch(date, () => fetchReservations(), { immediate: true });
 watch(reservations, () => populateTables(), { immediate: true, deep: true });

@@ -12,19 +12,48 @@
           </div>
           <el-button size="small" @click="goBack">Назад</el-button>
         </div>
-        <SchemaEditor />
+        <SchemaEditor :schemaData="schemaData" @save-schema="handleSaveSchema" />
       </el-card>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref } from "vue";
 import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
 import NavBar from "@/components/NavBar.vue";
 import SchemaEditor from "@/components/SchemaEditor.vue";
 
 const router = useRouter();
+const schemaData = ref(null);
+
+const STORAGE_KEY = "schema-config";
+
 const goBack = () => router.push("/profile");
+
+const loadSchema = () => {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try {
+    schemaData.value = JSON.parse(raw);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const handleSaveSchema = (payload) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    ElMessage.success("Схема сохранена (локально)");
+    schemaData.value = payload;
+  } catch (error) {
+    console.log(error);
+    ElMessage.error("Не удалось сохранить схему");
+  }
+};
+
+loadSchema();
 </script>
 
 <style scoped lang="scss">
