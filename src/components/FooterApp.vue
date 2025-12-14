@@ -10,6 +10,7 @@
         value-format="DD.MM.YY"
         :clearable="false"
         :editable="false"
+        :first-day-of-week="1"
         style="width: 150px;"
         @change="handleDateChange"
       />

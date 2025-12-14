@@ -11,4 +11,8 @@ import "dayjs/locale/ru";
 
 dayjs.locale("ru");
 export const tg = window.Telegram.WebApp;
-createApp(App).use(pinia).use(router).use(ElementPlus).mount("#app");
+createApp(App)
+  .use(pinia)
+  .use(router)
+  .use(ElementPlus, { locale: ru })
+  .mount("#app");

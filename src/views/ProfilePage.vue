@@ -119,6 +119,73 @@
               </el-button>
             </div>
           </el-form>
+
+          <el-divider />
+
+          <div class="telegram-link">
+            <div class="telegram-link__header">
+              <div>
+                <h4 class="telegram-link__title">Привязка приватной группы</h4>
+                <p class="telegram-link__subtitle">
+                  Получите код /link, добавьте бота в группу и отправьте команду, чтобы автоматически подставить chat_id.
+                </p>
+              </div>
+              <div class="telegram-link__actions">
+                <el-button
+                  type="primary"
+                  :loading="telegramLink.loading"
+                  :disabled="telegramLink.loading || loadingSettings"
+                  @click="startTelegramLinking"
+                >
+                  Привязать группу
+                </el-button>
+                <el-button
+                  v-if="telegramLink.code"
+                  :disabled="telegramLink.loading || loadingSettings"
+                  @click="resetTelegramLink"
+                >
+                  Сбросить код
+                </el-button>
+              </div>
+            </div>
+
+            <div v-if="telegramLink.code" class="telegram-link__code-block">
+              <div class="telegram-link__code">{{ telegramLink.code }}</div>
+              <div class="telegram-link__hint">
+                <p>1. Добавьте бота в приватную группу.</p>
+                <p>2. Отправьте в группе команду: <code>/link {{ telegramLink.code }}</code></p>
+                <p>3. После ответа бота мы заберём chat_id через API и заполним настройки.</p>
+              </div>
+              <div class="telegram-link__status">
+                <el-tag :type="telegramLinkTagType" size="small">
+                  {{ telegramLinkStatusText }}
+                </el-tag>
+                <div class="telegram-link__status-actions">
+                  <el-button size="small" :loading="telegramLink.checking" @click="copyLinkCode">
+                    Скопировать код
+                  </el-button>
+                  <el-button
+                    size="small"
+                    :loading="telegramLink.checking"
+                    :disabled="telegramLink.status === 'linked'"
+                    @click="checkTelegramLinkStatus"
+                  >
+                    Обновить статус
+                  </el-button>
+                </div>
+              </div>
+              <p v-if="telegramExpiresInMinutes !== null" class="telegram-link__expires">
+                Код действует примерно {{ telegramExpiresInMinutes }} минут.
+              </p>
+              <p v-if="telegramLink.chatId" class="telegram-link__chat">
+                Текущий chat_id: <strong>{{ telegramLink.chatId }}</strong>
+                <span v-if="telegramLink.chatTitle">&nbsp;({{ telegramLink.chatTitle }})</span>
+              </p>
+            </div>
+            <div v-else class="telegram-link__placeholder">
+              <p>Нажмите «Привязать группу», чтобы получить одноразовый код.</p>
+            </div>
+          </div>
         </el-card>
       </el-card>
     </div>
@@ -126,7 +193,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, onUnmounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import NavBar from "@/components/NavBar.vue";
@@ -174,6 +241,21 @@ const originalSettings = reactive({
   admin_chat: "",
 });
 
+const telegramLink = reactive({
+  code: "",
+  status: "idle",
+  expiresIn: null,
+  expiresAt: null,
+  ttlMinutes: null,
+  chatId: "",
+  chatTitle: "",
+  error: "",
+  loading: false,
+  checking: false,
+});
+
+let telegramStatusTimer = null;
+
 const isAdmin = computed(() => authStore.user?.role === "admin");
 
 const canSave = computed(
@@ -186,6 +268,36 @@ const canSave = computed(
       !!form.password ||
       !!avatarFile.value)
 );
+
+const telegramLinkTagType = computed(() => {
+  if (telegramLink.status === "linked") return "success";
+  if (telegramLink.status === "waiting") return "info";
+  if (telegramLink.status === "expired") return "warning";
+  if (telegramLink.status === "error") return "danger";
+  return "info";
+});
+
+const telegramLinkStatusText = computed(() => {
+  if (telegramLink.status === "linked" && telegramLink.chatId) {
+    return `Готово: ${telegramLink.chatTitle || telegramLink.chatId}`;
+  }
+  if (telegramLink.status === "waiting") {
+    return "Ждём команду /link в группе";
+  }
+  if (telegramLink.status === "expired") {
+    return "Код истёк, сгенерируйте новый";
+  }
+  if (telegramLink.status === "error") {
+    return telegramLink.error || "Ошибка привязки";
+  }
+  return "Получите код и отправьте его в группу";
+});
+
+const telegramExpiresInMinutes = computed(() => {
+  if (!telegramLink.expiresAt) return null;
+  const diff = Math.ceil((telegramLink.expiresAt - Date.now()) / 60000);
+  return diff > 0 ? diff : 0;
+});
 
 const resetForm = () => {
   form.fullName = original.fullName;
@@ -312,6 +424,122 @@ const resetSettings = () => {
   settings.admin_chat = originalSettings.admin_chat;
 };
 
+const clearTelegramTimer = () => {
+  if (telegramStatusTimer) {
+    clearInterval(telegramStatusTimer);
+    telegramStatusTimer = null;
+  }
+};
+
+const resetTelegramLink = () => {
+  clearTelegramTimer();
+  telegramLink.code = "";
+  telegramLink.status = "idle";
+  telegramLink.expiresIn = null;
+  telegramLink.expiresAt = null;
+  telegramLink.ttlMinutes = null;
+  telegramLink.chatId = "";
+  telegramLink.chatTitle = "";
+  telegramLink.error = "";
+};
+
+const startTelegramLinking = async () => {
+  if (!isAdmin.value || telegramLink.loading || loadingSettings.value) return;
+  telegramLink.loading = true;
+  telegramLink.error = "";
+  telegramLink.status = "waiting";
+  telegramLink.chatId = "";
+  telegramLink.chatTitle = "";
+  telegramLink.expiresIn = null;
+  telegramLink.expiresAt = null;
+  telegramLink.ttlMinutes = null;
+  clearTelegramTimer();
+  try {
+    const resp = await api.createTelegramLinkCode();
+    telegramLink.code = resp?.code || "";
+    telegramLink.ttlMinutes = resp?.ttl_minutes ?? null;
+    const expiresRaw = resp?.expires_at ? Date.parse(resp.expires_at) : null;
+    telegramLink.expiresAt =
+      Number.isFinite(expiresRaw) && expiresRaw > 0
+        ? expiresRaw
+        : telegramLink.ttlMinutes
+          ? Date.now() + telegramLink.ttlMinutes * 60 * 1000
+          : null;
+    telegramLink.status = "waiting";
+    if (!telegramLink.code) {
+      throw new Error("no-link-code");
+    }
+    telegramStatusTimer = setInterval(() => checkTelegramLinkStatus(true), 4000);
+    ElMessage.success("Код привязки получен. Отправьте /link в группе.");
+  } catch (error) {
+    console.log(error);
+    telegramLink.status = "error";
+    telegramLink.error = "Не удалось получить код привязки";
+    ElMessage.error(telegramLink.error);
+  } finally {
+    telegramLink.loading = false;
+  }
+};
+
+const checkTelegramLinkStatus = async (silent = false) => {
+  if (!telegramLink.code) {
+    clearTelegramTimer();
+    return;
+  }
+  if (telegramLink.expiresAt && telegramLink.expiresAt <= Date.now()) {
+    telegramLink.status = "expired";
+    clearTelegramTimer();
+    return;
+  }
+  if (!silent) {
+    telegramLink.checking = true;
+  }
+  try {
+    const resp = await api.getSettings();
+    const s = resp?.settings || resp || {};
+    const chatId = s.chat_id ? String(s.chat_id) : "";
+
+    if (chatId) {
+      telegramLink.chatId = chatId;
+      telegramLink.status = "linked";
+      settings.chat_id = chatId;
+      originalSettings.chat_id = chatId;
+      clearTelegramTimer();
+      ElMessage.success("Чат привязан, chat_id обновлён.");
+      return;
+    }
+
+    telegramLink.status = "waiting";
+  } catch (error) {
+    console.log(error);
+    telegramLink.status = "error";
+    telegramLink.error = "Не удалось проверить статус привязки";
+    clearTelegramTimer();
+  } finally {
+    telegramLink.checking = false;
+  }
+};
+
+const copyLinkCode = async () => {
+  if (!telegramLink.code) return;
+  try {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(telegramLink.code);
+    } else {
+      const input = document.createElement("input");
+      input.value = telegramLink.code;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      document.body.removeChild(input);
+    }
+    ElMessage.success("Код скопирован");
+  } catch (error) {
+    console.log(error);
+    ElMessage.error("Не удалось скопировать код");
+  }
+};
+
 const loadSettings = async () => {
   if (!isAdmin.value) return;
   loadingSettings.value = true;
@@ -357,6 +585,10 @@ const saveSettings = async () => {
 const goHome = () => {
   router.push("/");
 };
+
+onUnmounted(() => {
+  clearTelegramTimer();
+});
 
 onMounted(async () => {
   await loadUser();
@@ -494,6 +726,91 @@ onMounted(async () => {
   font-size: 12px;
   color: var(--text-secondary);
 }
+
+.telegram-link {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-surface);
+}
+
+.telegram-link__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.telegram-link__title {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.telegram-link__subtitle {
+  margin: 4px 0 0;
+  color: var(--text-primary);
+  opacity: 0.9;
+}
+
+.telegram-link__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.telegram-link__code-block {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.telegram-link__code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 12px;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.telegram-link__hint {
+  background: var(--bg-surface-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  opacity: 0.92;
+}
+
+.telegram-link__hint p {
+  margin: 4px 0;
+}
+
+.telegram-link__status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.telegram-link__status-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.telegram-link__expires,
+.telegram-link__chat,
+.telegram-link__placeholder {
+  margin: 0;
+  color: var(--text-primary);
+  opacity: 0.9;
+}
 </style>
-
-

@@ -137,6 +137,7 @@ export const api = {
   uploadFile: (fileOrFormData) => apiClient.upload("/upload", fileOrFormData),
   getSchema: () => apiClient.get("/schema"),
   saveSchema: (schema) => apiClient.post("/schema", { body: { schema } }),
+  createTelegramLinkCode: () => apiClient.post("/settings/link-code"),
 };
 
 export { API_BASE_URL, setToken, getToken, clearToken };
