@@ -28,13 +28,46 @@ import { api } from "@/api/client";
 
 const router = useRouter();
 const schemaData = ref(null);
+const SCHEMA_STORAGE_KEY = "schema-cache";
 
 const goBack = () => router.push("/profile");
+
+const loadLocalSchema = () => {
+  try {
+    const raw = localStorage.getItem(SCHEMA_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (error) {
+    console.log("local schema read", error);
+    return null;
+  }
+};
+
+const saveLocalSchema = (schema, updatedAt) => {
+  try {
+    const payload = { schema, updated_at: updatedAt ?? Date.now() };
+    localStorage.setItem(SCHEMA_STORAGE_KEY, JSON.stringify(payload));
+  } catch (error) {
+    console.log("local schema write", error);
+  }
+};
 
 const loadSchema = async () => {
   try {
     const resp = await api.getSchema();
-    schemaData.value = resp?.schema ?? resp ?? null;
+    const remoteSchema = resp?.schema ?? resp ?? null;
+    const remoteUpdated = resp?.updated_at ?? resp?.updatedAt ?? null;
+    const local = loadLocalSchema();
+    const localUpdated = local?.updated_at ?? local?.updatedAt ?? null;
+    if (local?.schema) {
+      schemaData.value = local.schema;
+    }
+    if (!remoteSchema) return;
+    if (remoteUpdated && localUpdated && remoteUpdated === localUpdated) {
+      return;
+    }
+    schemaData.value = remoteSchema;
+    saveLocalSchema(remoteSchema, remoteUpdated);
   } catch (error) {
     console.log(error);
     ElMessage.warning("Не удалось загрузить схему из API, показана пустая/последняя версия.");
@@ -44,7 +77,10 @@ const loadSchema = async () => {
 const handleSaveSchema = async (payload) => {
   try {
     const resp = await api.saveSchema(payload);
-    schemaData.value = resp?.schema ?? payload;
+    const savedSchema = resp?.schema ?? payload;
+    const updatedAt = resp?.updated_at ?? resp?.updatedAt ?? Date.now();
+    schemaData.value = savedSchema;
+    saveLocalSchema(savedSchema, updatedAt);
     ElMessage.success("Схема сохранена через API");
   } catch (error) {
     console.log(error);

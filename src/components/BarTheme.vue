@@ -116,6 +116,7 @@ const normalizeOpacity = (value) => {
 };
 
 const schemaConfig = ref(null);
+const schemaCache = ref(null);
 
 const tablesWithFill = computed(() => {
   const source = schemaConfig.value?.tables;
@@ -281,17 +282,60 @@ const openRoom = () => openTable("12");
 
 defineExpose({ openRoom });
 
-const loadSchema = async () => {
+const SCHEMA_STORAGE_KEY = "schema-cache";
+
+const loadLocalSchema = () => {
+  try {
+    const raw = localStorage.getItem(SCHEMA_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    schemaCache.value = parsed;
+    return parsed;
+  } catch (error) {
+    console.log("schema local load", error);
+    return null;
+  }
+};
+
+const saveLocalSchema = (schema, updatedAt) => {
+  try {
+    const payload = { schema, updated_at: updatedAt ?? Date.now() };
+    localStorage.setItem(SCHEMA_STORAGE_KEY, JSON.stringify(payload));
+    schemaCache.value = payload;
+  } catch (error) {
+    console.log("schema local save", error);
+  }
+};
+
+const applySchema = (payload) => {
+  if (!payload) return;
+  schemaConfig.value = payload?.schema ?? payload ?? null;
+};
+
+const fetchRemoteSchema = async () => {
   try {
     const resp = await api.getSchema();
-    schemaConfig.value = resp?.schema ?? resp ?? null;
+    const remoteSchema = resp?.schema ?? resp ?? null;
+    const remoteUpdated = resp?.updated_at ?? resp?.updatedAt ?? null;
+    const localUpdated = schemaCache.value?.updated_at ?? schemaCache.value?.updatedAt ?? null;
+    if (remoteUpdated && localUpdated && remoteUpdated === localUpdated) {
+      return;
+    }
+    if (remoteSchema) {
+      applySchema(remoteSchema);
+      saveLocalSchema(remoteSchema, remoteUpdated);
+    }
   } catch (error) {
     console.log(error);
   }
 };
 
 onMounted(() => {
-  loadSchema();
+  const local = loadLocalSchema();
+  if (local?.schema) {
+    applySchema(local.schema);
+  }
+  fetchRemoteSchema();
 });
 
 watch(date, () => fetchReservations(), { immediate: true });
