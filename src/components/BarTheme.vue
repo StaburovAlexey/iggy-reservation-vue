@@ -71,7 +71,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch, onMounted, onUnmounted } from "vue";
+import { computed, ref, watch, onMounted, onUnmounted } from "vue";
 import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
 import ModalApp from "./ModalApp.vue";
@@ -92,21 +92,6 @@ const userId = computed(() => user.value?.uuid);
 
 const storeReservations = computed(() => storeReservation.value || []);
 
-const tables = reactive({
-  table_1: [],
-  table_2: [],
-  table_3: [],
-  table_4: [],
-  table_5: [],
-  table_6: [],
-  table_7: [],
-  table_8: [],
-  table_9: [],
-  table_10: [],
-  pull: [],
-  room: [],
-});
-
 const SCHEMA_WIDTH = 214;
 const SCHEMA_HEIGHT = 325;
 
@@ -119,6 +104,8 @@ const normalizeOpacity = (value) => {
 const schemaConfig = ref(null);
 const schemaCache = ref(null);
 let socket;
+
+const filterByTable = (tableId) => reservations.value.filter((item) => item.table === tableId);
 
 const tablesWithFill = computed(() => {
   const source = schemaConfig.value?.tables;
@@ -192,25 +179,7 @@ const selectedTableReservations = computed(() =>
   selectedTable.value ? filterByTable(selectedTable.value) : []
 );
 
-const isRoomReserved = computed(() => tables.room.length > 0);
-
-const filterByTable = (tableId) =>
-  reservations.value.filter((item) => item.table === tableId);
-
-const populateTables = () => {
-  tables.table_1 = filterByTable("1");
-  tables.table_2 = filterByTable("2");
-  tables.table_3 = filterByTable("3");
-  tables.table_4 = filterByTable("4");
-  tables.table_5 = filterByTable("5");
-  tables.table_6 = filterByTable("6");
-  tables.table_7 = filterByTable("7");
-  tables.table_8 = filterByTable("8");
-  tables.table_9 = filterByTable("9");
-  tables.table_10 = filterByTable("10");
-  tables.pull = filterByTable("11");
-  tables.room = filterByTable("12");
-};
+const isRoomReserved = computed(() => filterByTable("12").length > 0);
 
 const fetchReservations = async ({ silent = false } = {}) => {
   if (!date.value) return;
@@ -265,14 +234,6 @@ const creatReserve = async (data) => {
   } finally {
     loading.value = false;
   }
-};
-
-const tableColor = (tableId) => {
-  const has = filterByTable(tableId).length > 0;
-  const baseColor = schemaConfig.value?.colors?.base || "#38bdf8";
-  const bookedColor = schemaConfig.value?.colors?.booked || "#ef4444";
-  if (tableId === "12") return has ? bookedColor : "#22c55e";
-  return has ? bookedColor : baseColor;
 };
 
 const openTable = (tableId) => {
@@ -367,7 +328,6 @@ onUnmounted(() => {
 });
 
 watch(date, () => fetchReservations(), { immediate: true });
-watch(reservations, () => populateTables(), { immediate: true, deep: true });
 watch(
   storeReservations,
   (value) => {
