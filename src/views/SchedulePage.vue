@@ -6,7 +6,7 @@
 
     <div class="schedule-page__body">
 
-      <div class="schedule-grid">
+      <div class="schedule-grid" :class="{ 'schedule-grid--full': !isAdmin }">
 
         <el-card class="schedule-grid__calendar" shadow="hover" v-loading="loading">
 
@@ -14,11 +14,11 @@
 
             <div>
 
-              <h2 class="schedule-card__title">���������� ����</h2>
+              <h2 class="schedule-card__title">Расписание смен</h2>
 
               <p class="schedule-card__subtitle">
 
-                ��������, �������� � ������� ����� ���� �������������, ������������� ����� ������ �����.
+                Открытие, закрытие и подмога видны всем пользователям, редактировать может только админ.
 
               </p>
 
@@ -27,15 +27,15 @@
             <div class="schedule-card__controls">
 
               <el-date-picker v-model="visibleMonth" type="month" format="MMMM YYYY" value-format="YYYY-MM"
-                :clearable="false" :editable="false" placeholder="�����" @change="handleMonthPickerChange" />
+                :clearable="false" :editable="false" placeholder="Месяц" @change="handleMonthPickerChange" />
 
               <div class="schedule-card__buttons">
 
-                <el-button size="small" @click="shiftMonth(-1)">����������</el-button>
+                <el-button size="small" @click="shiftMonth(-1)">Предыдущий</el-button>
 
-                <el-button size="small" @click="goToday">�������</el-button>
+                <el-button size="small" @click="goToday">Текущий</el-button>
 
-                <el-button size="small" @click="shiftMonth(1)">���������</el-button>
+                <el-button size="small" @click="shiftMonth(1)">Следующий</el-button>
 
                 <el-button size="small" :icon="Refresh" :loading="loading" circle @click="refreshSchedule" />
 
@@ -118,13 +118,13 @@
 
 
 
-        <el-card class="schedule-grid__employees" shadow="hover">
+        <el-card v-if="isAdmin" class="schedule-grid__employees" shadow="hover">
 
           <div class="employee-header">
 
-            <h3>����������</h3>
+            <h3>Сотрудники</h3>
 
-            <p class="employee-hint">���������� ���������� �� ������ ������ ������ ���.</p>
+            <p class="employee-hint">Перетащите сотрудника на нужную группу внутри дня.</p>
 
           </div>
 
@@ -147,7 +147,7 @@
 
             </el-tag>
 
-            <el-empty v-if="!employees.length" description="��� �����������"></el-empty>
+            <el-empty v-if="!employees.length" description="Нет сотрудников"></el-empty>
 
           </div>
 
@@ -183,11 +183,11 @@ import { useAuthStore } from "@/store/auth";
 
 const GROUPS = [
 
-  { key: "opening", label: "��������", tag: "success" },
+  { key: "opening", label: "Открытие", tag: "success" },
 
-  { key: "closing", label: "��������", tag: "warning" },
+  { key: "closing", label: "Закрытие", tag: "warning" },
 
-  { key: "helpers", label: "�������", tag: "info", hint: "��� �������" },
+  { key: "helpers", label: "Подмога", tag: "info", hint: "Для подмоги" },
 
 ];
 
@@ -370,6 +370,10 @@ const applySchedule = (payload) => {
 
 
 const loadEmployees = async () => {
+  if (!isAdmin.value) {
+    employees.value = [];
+    return;
+  }
 
   employeesLoading.value = true;
 
@@ -385,7 +389,7 @@ const loadEmployees = async () => {
 
     console.log(error);
 
-    ElMessage.error("�� ������� ��������� ������ �����������");
+    ElMessage.error("Не удалось загрузить список сотрудников");
 
   } finally {
 
@@ -413,7 +417,7 @@ const fetchSchedule = async () => {
 
     console.log(error);
 
-    ElMessage.error("�� ������� ��������� ����������");
+    ElMessage.error("Не удалось загрузить расписание");
 
   } finally {
 
@@ -539,13 +543,13 @@ const saveDayData = async (dateKey) => {
 
     await api.saveScheduleForDate(dateKey, payload);
 
-    ElMessage.success("���������� ���������");
+    ElMessage.success("Расписание обновлено");
 
   } catch (error) {
 
     console.log(error);
 
-    ElMessage.error("�� ������� ��������� ����������");
+    ElMessage.error("Не удалось сохранить расписание");
 
   }
 
@@ -665,7 +669,7 @@ const handleGroupDrop = async (date, groupKey) => {
 
   if (!isAdmin.value) {
 
-    ElMessage.warning("������������� ���������� ����� ������ �����");
+    ElMessage.warning("Редактировать расписание может только админ");
 
     return;
 
@@ -685,7 +689,7 @@ const handleGroupDrop = async (date, groupKey) => {
 
   } else {
 
-    ElMessage.info("��������� ��� ������������ � ���� ������");
+    ElMessage.info("Сотрудник уже присутствует в этой группе");
 
   }
 
@@ -736,11 +740,18 @@ const isToday = (date) => dayjs(date).isSame(dayjs(), "day");
 
 
 onMounted(() => {
-
   fetchSchedule();
+  if (isAdmin.value) {
+    loadEmployees();
+  }
+});
 
-  loadEmployees();
-
+watch(isAdmin, (next) => {
+  if (next) {
+    loadEmployees();
+  } else {
+    employees.value = [];
+  }
 });
 
 </script>
@@ -793,6 +804,12 @@ onMounted(() => {
   grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.7fr);
 
   gap: 16px;
+
+}
+
+.schedule-grid--full {
+
+  grid-template-columns: 1fr;
 
 }
 
@@ -1200,7 +1217,8 @@ onMounted(() => {
 
 .schedule-date__people :deep(.el-tag) {
 
-  max-width: 100%;
+
+  width: 100%;
 
   min-width: 0;
 
