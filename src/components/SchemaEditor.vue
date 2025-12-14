@@ -61,6 +61,14 @@
       </div>
 
       <div class="panel-block">
+        <h3 class="panel-title">Управление схемой</h3>
+        <div class="schema-editor__actions schema-editor__actions--gap">
+          <el-button size="small" @click="emitSaveSchema">Сохранить схему</el-button>
+          <el-button type="warning" size="small" @click="resetLayout">Сбросить схему</el-button>
+        </div>
+      </div>
+
+      <div class="panel-block">
         <h3 class="panel-title">Параметры стола</h3>
         <div class="field">
           <span class="field-label">Выберите стол</span>
@@ -252,7 +260,6 @@
 
         <div class="schema-editor__actions schema-editor__actions--gap">
           <el-button type="primary" size="small" @click="addTable">Добавить стол</el-button>
-          <el-button size="small" @click="emitSaveSchema">Сохранить схему</el-button>
         </div>
 
         <div class="panel-divider panel-divider--sub"></div>
@@ -278,7 +285,6 @@
 
         <div class="schema-editor__actions schema-editor__actions--gap">
           <el-button type="primary" size="small" @click="addSeparator">Добавить линию</el-button>
-          <el-button size="small" @click="resetLayout">Сбросить схему</el-button>
         </div>
       </div>
     </div>
@@ -286,7 +292,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, reactive, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 
 const props = defineProps({
   schemaData: {
@@ -395,6 +401,26 @@ const shapeAttrs = (table) => {
   return { x: -width / 2, y: -height / 2, width, height, rx: table.rx ?? 6 };
 };
 
+const tableHalfSize = (table) => {
+  if (!table) return { hx: 0, hy: 0 };
+  if (table.shape === "circle") {
+    const r = Math.max(1, table.r ?? 16);
+    return { hx: r, hy: r };
+  }
+  const width = Math.max(1, table.width ?? 40);
+  const height = Math.max(1, table.height ?? 30);
+  return { hx: width / 2, hy: height / 2 };
+};
+
+const tableBounds = (table) => {
+  const { hx, hy } = tableHalfSize(table);
+  const minX = hx;
+  const maxX = Math.max(hx, schemaSize.width - hx);
+  const minY = hy;
+  const maxY = Math.max(hy, schemaSize.height - hy);
+  return { minX, maxX, minY, maxY };
+};
+
 const tableFill = (id) => {
   const table = tables.value.find((item) => item.id === id);
   if (!table) return colors.base;
@@ -496,8 +522,9 @@ const applyDragPosition = () => {
   if (dragState.type === "table") {
     const table = tables.value.find((item) => item.id === dragState.id);
     if (!table) return;
-    table.x = clamp(lastMove.x - dragState.offsetX, 0, schemaSize.width);
-    table.y = clamp(lastMove.y - dragState.offsetY, 0, schemaSize.height);
+    const { minX, maxX, minY, maxY } = tableBounds(table);
+    table.x = clamp(lastMove.x - dragState.offsetX, minX, maxX);
+    table.y = clamp(lastMove.y - dragState.offsetY, minY, maxY);
   } else if (dragState.type === "separator") {
     const separator = separators.value.find((item) => item.id === dragState.id);
     if (!separator) return;
@@ -798,3 +825,6 @@ onBeforeUnmount(() => {
   }
 }
 </style>
+
+
+
