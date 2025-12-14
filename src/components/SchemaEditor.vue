@@ -36,7 +36,9 @@
             :is="table.shape"
             v-bind="shapeAttrs(table)"
             :fill="tableFill(table.id)"
+            :fill-opacity="tableOpacity(table)"
             stroke="#111827"
+            :stroke-opacity="tableOpacity(table)"
             stroke-width="2"
           />
           <text x="0" y="4" text-anchor="middle" font-size="12" fill="#0b1220" font-weight="700">
@@ -114,6 +116,26 @@
           <div class="field">
             <span class="field-label">Z-слой</span>
             <el-input-number v-model="currentTable.z" :min="0" size="small" />
+          </div>
+          <div class="field">
+            <span class="field-label">Z при брони</span>
+            <el-input-number v-model="currentTable.zBooked" :min="0" size="small" />
+          </div>
+          <div class="field">
+            <span class="field-label">Цвет (обычный)</span>
+            <el-color-picker v-model="currentTable.colorBase" size="small" />
+          </div>
+          <div class="field">
+            <span class="field-label">Прозрачность (обычный)</span>
+            <el-input-number v-model="currentTable.opacityBase" :min="0" :max="1" :step="0.05" size="small" />
+          </div>
+          <div class="field">
+            <span class="field-label">Цвет (бронирован)</span>
+            <el-color-picker v-model="currentTable.colorBooked" size="small" />
+          </div>
+          <div class="field">
+            <span class="field-label">Прозрачность (бронирован)</span>
+            <el-input-number v-model="currentTable.opacityBooked" :min="0" :max="1" :step="0.05" size="small" />
           </div>
         </div>
         <div v-if="currentTable" class="schema-editor__actions schema-editor__actions--gap">
@@ -206,6 +228,26 @@
             <span class="field-label">Z-слой</span>
             <el-input-number v-model="newTable.z" :min="0" size="small" />
           </div>
+          <div class="field">
+            <span class="field-label">Z при брони</span>
+            <el-input-number v-model="newTable.zBooked" :min="0" size="small" />
+          </div>
+          <div class="field">
+            <span class="field-label">Цвет (обычный)</span>
+            <el-color-picker v-model="newTable.colorBase" size="small" />
+          </div>
+          <div class="field">
+            <span class="field-label">Прозрачность (обычный)</span>
+            <el-input-number v-model="newTable.opacityBase" :min="0" :max="1" :step="0.05" size="small" />
+          </div>
+          <div class="field">
+            <span class="field-label">Цвет (бронирован)</span>
+            <el-color-picker v-model="newTable.colorBooked" size="small" />
+          </div>
+          <div class="field">
+            <span class="field-label">Прозрачность (бронирован)</span>
+            <el-input-number v-model="newTable.opacityBooked" :min="0" :max="1" :step="0.05" size="small" />
+          </div>
         </div>
 
         <div class="schema-editor__actions schema-editor__actions--gap">
@@ -257,19 +299,25 @@ const emit = defineEmits(["save-schema"]);
 
 const schemaSize = { width: 214, height: 325 };
 
+const normalizeOpacity = (value) => {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 1;
+  return Math.max(0, Math.min(1, num));
+};
+
 const initialTables = [
-  { id: "11", label: "Pull", shape: "rect", x: 35, y: 60, width: 40, height: 30, rx: 6, z: 2, booked: false },
-  { id: "8", label: "8", shape: "rect", x: 107, y: 40, width: 40, height: 30, rx: 6, z: 2, booked: false },
-  { id: "9", label: "9", shape: "rect", x: 170, y: 60, width: 40, height: 30, rx: 6, z: 2, booked: false },
-  { id: "10", label: "10", shape: "rect", x: 107, y: 90, width: 40, height: 30, rx: 6, z: 2, booked: false },
-  { id: "1", label: "1", shape: "rect", x: 35, y: 140, width: 60, height: 30, rx: 6, z: 2, booked: false },
-  { id: "2", label: "2", shape: "circle", x: 190, y: 140, r: 16, z: 2, booked: false },
-  { id: "3", label: "3", shape: "rect", x: 35, y: 210, width: 60, height: 30, rx: 6, z: 2, booked: false },
-  { id: "4", label: "4", shape: "circle", x: 90, y: 210, r: 16, z: 2, booked: false },
-  { id: "5", label: "5", shape: "rect", x: 140, y: 210, width: 60, height: 30, rx: 6, z: 2, booked: false },
-  { id: "6", label: "6", shape: "circle", x: 190, y: 210, r: 16, z: 2, booked: false },
-  { id: "7", label: "7", shape: "circle", x: 35, y: 280, r: 16, z: 2, booked: false },
-  { id: "12", label: "Room", shape: "rect", x: 107, y: 60, width: 214, height: 120, rx: 12, z: 1, booked: false },
+  { id: "11", label: "Pull", shape: "rect", x: 35, y: 60, width: 40, height: 30, rx: 6, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
+  { id: "8", label: "8", shape: "rect", x: 107, y: 40, width: 40, height: 30, rx: 6, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
+  { id: "9", label: "9", shape: "rect", x: 170, y: 60, width: 40, height: 30, rx: 6, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
+  { id: "10", label: "10", shape: "rect", x: 107, y: 90, width: 40, height: 30, rx: 6, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
+  { id: "1", label: "1", shape: "rect", x: 35, y: 140, width: 60, height: 30, rx: 6, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
+  { id: "2", label: "2", shape: "circle", x: 190, y: 140, r: 16, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
+  { id: "3", label: "3", shape: "rect", x: 35, y: 210, width: 60, height: 30, rx: 6, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
+  { id: "4", label: "4", shape: "circle", x: 90, y: 210, r: 16, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
+  { id: "5", label: "5", shape: "rect", x: 140, y: 210, width: 60, height: 30, rx: 6, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
+  { id: "6", label: "6", shape: "circle", x: 190, y: 210, r: 16, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
+  { id: "7", label: "7", shape: "circle", x: 35, y: 280, r: 16, z: 2, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
+  { id: "12", label: "Room", shape: "rect", x: 107, y: 60, width: 214, height: 120, rx: 12, z: 1, zBooked: null, colorBase: defaultBaseColor, opacityBase: 1, colorBooked: defaultBookedColor, opacityBooked: 1, booked: false },
 ];
 
 const defaultBaseColor = "#38bdf8";
@@ -307,9 +355,9 @@ const lastMove = reactive({
 const currentTable = computed(() => tables.value.find((table) => table.id === selectedId.value) || null);
 const sortedTables = computed(() =>
   [...tables.value].sort((a, b) => {
-    const za = a.z ?? 0;
-    const zb = b.z ?? 0;
-    return za === zb ? a.id.localeCompare(b.id) : za - zb;
+    const za = tableZ(a);
+    const zb = tableZ(b);
+    return za === zb ? String(a.id).localeCompare(String(b.id)) : za - zb;
   })
 );
 
@@ -326,6 +374,11 @@ const newTable = reactive({
   rx: 6,
   r: 16,
   z: 2,
+  zBooked: null,
+  colorBase: defaultBaseColor,
+  opacityBase: 1,
+  colorBooked: defaultBookedColor,
+  opacityBooked: 1,
   booked: false,
 });
 const newSeparator = reactive({
@@ -345,7 +398,20 @@ const shapeAttrs = (table) => {
 const tableFill = (id) => {
   const table = tables.value.find((item) => item.id === id);
   if (!table) return colors.base;
-  return table.booked ? colors.booked : colors.base;
+  const primary = table.booked ? table.colorBooked || colors.booked : table.colorBase || colors.base;
+  return primary;
+};
+
+const tableOpacity = (table) => {
+  const base = normalizeOpacity(table.opacityBase);
+  const booked = normalizeOpacity(table.opacityBooked);
+  return table.booked ? booked : base;
+};
+
+const tableZ = (table) => {
+  if (!table) return 0;
+  if (table.booked && Number.isFinite(table.zBooked)) return table.zBooked;
+  return table.z ?? 0;
 };
 
 const schemaPayload = computed(() => ({
@@ -360,6 +426,11 @@ const schemaPayload = computed(() => ({
     rx: table.rx,
     r: table.r,
     z: table.z,
+    zBooked: table.zBooked,
+    colorBase: table.colorBase,
+    opacityBase: table.opacityBase,
+    colorBooked: table.colorBooked,
+    opacityBooked: table.opacityBooked,
     booked: table.booked,
   })),
   separators: separators.value.map((item) => ({ ...item })),
@@ -466,6 +537,11 @@ const resetLayout = () => {
   newTable.rx = 6;
   newTable.r = 16;
   newTable.z = 2;
+  newTable.zBooked = null;
+  newTable.colorBase = defaultBaseColor;
+  newTable.opacityBase = 1;
+  newTable.colorBooked = defaultBookedColor;
+  newTable.opacityBooked = 1;
   colors.base = defaultBaseColor;
   colors.booked = defaultBookedColor;
 };
@@ -481,6 +557,11 @@ const addTable = () => {
     x: schemaSize.width / 2,
     y: schemaSize.height / 2,
     z: Number.isFinite(newTable.z) ? newTable.z : 2,
+    zBooked: Number.isFinite(newTable.zBooked) ? newTable.zBooked : null,
+    colorBase: newTable.colorBase || defaultBaseColor,
+    opacityBase: Number.isFinite(newTable.opacityBase) ? newTable.opacityBase : 1,
+    colorBooked: newTable.colorBooked || defaultBookedColor,
+    opacityBooked: Number.isFinite(newTable.opacityBooked) ? newTable.opacityBooked : 1,
     booked: false,
   };
   const size =
@@ -501,6 +582,13 @@ const addTable = () => {
   newTable.rx = 6;
   newTable.r = 16;
   newTable.z = 2;
+  newTable.zBooked = null;
+  newTable.colorBase = defaultBaseColor;
+  newTable.opacityBase = 1;
+  newTable.colorBooked = defaultBookedColor;
+  newTable.opacityBooked = 1;
+  colors.base = colors.base || defaultBaseColor;
+  colors.booked = colors.booked || defaultBookedColor;
 };
 
 const deleteTable = (id) => {

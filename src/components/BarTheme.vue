@@ -32,12 +32,9 @@
         />
 
         <!-- Зал (12) -->
-        <g class="hall" @click="openRoom" v-if="!isRoomReserved">
-          <rect x="0" y="0" width="100%" height="120" fill="url(#hallGradient)" />
-        </g>
 
         <g
-          v-for="table in svgTables"
+          v-for="table in tablesWithFill.tables"
           :key="table.id"
           :transform="table.transform"
           class="table-node"
@@ -46,21 +43,17 @@
           <component
             :is="table.shape"
             v-bind="table.shapeProps"
-            :fill="tableColor(table.id)"
+            :fill="table.fill"
+            :fill-opacity="table.fillOpacity"
             stroke="#111827"
+            :stroke-opacity="table.fillOpacity"
             stroke-width="2"
           />
           <text x="0" y="4" text-anchor="middle" font-size="12" fill="#0b1220" font-weight="700">
             {{ table.label }}
           </text>
         </g>
-        <g class="hall" @click="openRoom" v-if="isRoomReserved">
-          <rect x="0" y="0" width="100%" height="120" fill="url(#hallGradient)" />
-          <text x="50%" y="60" text-anchor="middle" font-size="22" fill="#fff" font-weight="700">
-            Комната занята
-          </text>
-        </g>
-        <defs>
+       <defs>
           <linearGradient id="hallGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" :stop-color="isRoomReserved ? '#ef4444' : '#22c55e'" stop-opacity="0.65" />
             <stop offset="100%" stop-color="#0b1220" stop-opacity="0.6" />
@@ -81,7 +74,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch, onMounted } from "vue";
+import { computed, reactive, ref, watch, onMounted, onUnmounted } from "vue";
 import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
 import ModalApp from "./ModalApp.vue";
@@ -119,34 +112,60 @@ const STORAGE_KEY = "schema-config";
 const SCHEMA_WIDTH = 214;
 const SCHEMA_HEIGHT = 325;
 
+const normalizeOpacity = (value) => {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 1;
+  return Math.max(0, Math.min(1, num));
+};
+
 const defaultTables = [
-  { id: "11", label: "Pull", shape: "rect", x: 35, y: 60, width: 40, height: 30, rx: 6 },
-  { id: "8", label: "8", shape: "rect", x: 107, y: 40, width: 40, height: 30, rx: 6 },
-  { id: "9", label: "9", shape: "rect", x: 170, y: 60, width: 40, height: 30, rx: 6 },
-  { id: "10", label: "10", shape: "rect", x: 107, y: 90, width: 40, height: 30, rx: 6 },
-  { id: "1", label: "1", shape: "rect", x: 35, y: 140, width: 60, height: 30, rx: 6 },
-  { id: "2", label: "2", shape: "circle", x: 190, y: 140, r: 16 },
-  { id: "3", label: "3", shape: "rect", x: 35, y: 210, width: 60, height: 30, rx: 6 },
-  { id: "4", label: "4", shape: "circle", x: 90, y: 210, r: 16 },
-  { id: "5", label: "5", shape: "rect", x: 140, y: 210, width: 60, height: 30, rx: 6 },
-  { id: "6", label: "6", shape: "circle", x: 190, y: 210, r: 16 },
-  { id: "7", label: "7", shape: "circle", x: 35, y: 280, r: 16 },
+  { id: "11", label: "Pull", shape: "rect", x: 35, y: 60, width: 40, height: 30, rx: 6, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
+  { id: "8", label: "8", shape: "rect", x: 107, y: 40, width: 40, height: 30, rx: 6, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
+  { id: "9", label: "9", shape: "rect", x: 170, y: 60, width: 40, height: 30, rx: 6, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
+  { id: "10", label: "10", shape: "rect", x: 107, y: 90, width: 40, height: 30, rx: 6, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
+  { id: "1", label: "1", shape: "rect", x: 35, y: 140, width: 60, height: 30, rx: 6, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
+  { id: "2", label: "2", shape: "circle", x: 190, y: 140, r: 16, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
+  { id: "3", label: "3", shape: "rect", x: 35, y: 210, width: 60, height: 30, rx: 6, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
+  { id: "4", label: "4", shape: "circle", x: 90, y: 210, r: 16, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
+  { id: "5", label: "5", shape: "rect", x: 140, y: 210, width: 60, height: 30, rx: 6, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
+  { id: "6", label: "6", shape: "circle", x: 190, y: 210, r: 16, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
+  { id: "7", label: "7", shape: "circle", x: 35, y: 280, r: 16, z: 2, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
+  { id: "12", label: "12", shape: "rect", x: SCHEMA_WIDTH / 2, y: 60, width: SCHEMA_WIDTH, height: 120, rx: 12, z: 1, zBooked: null, colorBase: "#38bdf8", colorBooked: "#ef4444", opacityBase: 1, opacityBooked: 1 },
 ];
 
 const schemaConfig = ref(null);
 const defaultSeparators = [{ id: "sep-1", orientation: "h", y: 120, x: SCHEMA_WIDTH / 2, thickness: 2 }];
 
-const svgTables = computed(() => {
+const tablesWithFill = computed(() => {
   const source = schemaConfig.value?.tables;
-  const colors = schemaConfig.value?.colors;
+  const globals = schemaConfig.value?.colors || {};
+  const baseDefault = globals.base || "#38bdf8";
+  const bookedDefault = globals.booked || "#ef4444";
 
   const mapTable = (table) => {
     const shape = table.shape === "circle" ? "circle" : "rect";
+    const z = table.z ?? 0;
+    const zBooked = table.zBooked;
+    const isBooked = filterByTable(String(table.id)).length > 0;
+    const effectiveZ = isBooked && Number.isFinite(zBooked) ? zBooked : z;
+
+    const baseColor = table.colorBase || baseDefault;
+    const bookedColor = table.colorBooked || bookedDefault;
+    const baseOpacity = normalizeOpacity(table.opacityBase);
+    const bookedOpacity = normalizeOpacity(table.opacityBooked);
+
+    const primaryColor = isBooked ? bookedColor : baseColor;
+    const opacity = isBooked ? bookedOpacity : baseOpacity;
+    const fill = primaryColor;
+
     if (shape === "circle") {
       return {
         id: String(table.id),
         label: table.label || String(table.id),
         shape,
+        z: effectiveZ,
+        fill,
+        fillOpacity: opacity,
         transform: `translate(${table.x ?? 0},${table.y ?? 0})`,
         shapeProps: { r: table.r ?? 16 },
       };
@@ -157,6 +176,9 @@ const svgTables = computed(() => {
       id: String(table.id),
       label: table.label || String(table.id),
       shape,
+      z: effectiveZ,
+      fill,
+      fillOpacity: opacity,
       transform: `translate(${table.x ?? 0},${table.y ?? 0})`,
       shapeProps: { x: -width / 2, y: -height / 2, width, height, rx: table.rx ?? 6 },
     };
@@ -164,10 +186,10 @@ const svgTables = computed(() => {
 
   const tablesSource = Array.isArray(source) && source.length ? source : defaultTables;
   const normalized = tablesSource
-    .filter((item) => String(item.id) !== "12")
-    .map((item) => mapTable(item));
+    .map((item) => mapTable(item))
+    .sort((a, b) => (a.z ?? 0) - (b.z ?? 0) || a.id.localeCompare(b.id));
 
-  return normalized;
+  return { tables: normalized, gradients: [] };
 });
 
 const separatorLines = computed(() => {
@@ -290,6 +312,11 @@ const loadSchema = () => {
 
 onMounted(() => {
   loadSchema();
+  window.addEventListener("storage", loadSchema);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("storage", loadSchema);
 });
 
 watch(date, () => fetchReservations(), { immediate: true });
