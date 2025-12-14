@@ -22,6 +22,9 @@
           <el-dropdown-item divided @click="editProfile">
             Профиль
           </el-dropdown-item>
+          <el-dropdown-item v-if="isAdmin" @click="editSchema">
+            Редактировать плана-схему
+          </el-dropdown-item>
           <el-dropdown-item @click="toggleTheme">
             Тема: {{ nextThemeLabel }}
           </el-dropdown-item>
@@ -51,6 +54,7 @@ const { user } = storeToRefs(authStore);
 
 const reservations = computed(() => reservation.value || []);
 const isRoomReserved = computed(() => reservations.value.some((item) => item.table === "12"));
+const isAdmin = computed(() => (user.value?.role || user.value?.user_metadata?.role) === "admin");
 
 const router = useRouter();
 const THEME_KEY = "iggy-theme";
@@ -96,6 +100,10 @@ const toggleTheme = () => {
 
 const editProfile = () => {
   router.push("/profile");
+};
+
+const editSchema = () => {
+  router.push("/edit-shema");
 };
 
 const logout = async () => {
@@ -186,3 +194,5 @@ const logout = async () => {
   color: var(--text-secondary);
 }
 </style>
+
+

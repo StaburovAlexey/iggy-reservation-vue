@@ -30,9 +30,6 @@
           :stroke-width="line.thickness || 2"
           stroke="var(--border-color)"
         />
-
-        <!-- Зал (12) -->
-
         <g
           v-for="table in tablesWithFill.tables"
           :key="table.id"
