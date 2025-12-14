@@ -212,16 +212,16 @@ const populateTables = () => {
   tables.room = filterByTable("12");
 };
 
-const fetchReservations = async () => {
+const fetchReservations = async ({ silent = false } = {}) => {
   if (!date.value) return;
-  loading.value = true;
+  if (!silent) loading.value = true;
   try {
     const data = await dataStore.fetchInfo();
     reservations.value = data || [];
   } catch (error) {
     console.log(error);
   } finally {
-    loading.value = false;
+    if (!silent) loading.value = false;
   }
 };
 
@@ -341,7 +341,7 @@ const handleSchemaUpdated = (payload) => {
 };
 
 const handleTableChanged = () => {
-  fetchReservations();
+  fetchReservations({ silent: true });
 };
 
 onMounted(() => {
