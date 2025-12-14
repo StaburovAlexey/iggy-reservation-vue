@@ -37,12 +37,13 @@
             </div>
           </div>
 
-          <el-calendar
-            v-model="calendarValue"
-            :range="calendarRange"
-            @panel-change="handlePanelChange"
-          >
-            <template #date-cell="{ data }">
+          <div class="schedule-card__scroll">
+            <el-calendar
+              v-model="calendarValue"
+              :range="calendarRange"
+              @panel-change="handlePanelChange"
+            >
+              <template #date-cell="{ data }">
               <div
                 class="schedule-date"
                 :class="{ 'is-today': isToday(data.day) }"
@@ -95,9 +96,10 @@
                     </div>
                   </div>
                 </div>
-              </div>
-            </template>
-          </el-calendar>
+                </div>
+              </template>
+            </el-calendar>
+          </div>
         </el-card>
 
         <el-card class="schedule-grid__employees" shadow="hover">
@@ -440,17 +442,25 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .schedule-page {
-  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.06), transparent 30%),
     radial-gradient(circle at 90% 10%, rgba(255, 255, 255, 0.05), transparent 25%),
     linear-gradient(180deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
 }
 
 .schedule-page__body {
+  flex: 1;
   padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .schedule-grid {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.7fr);
   gap: 16px;
@@ -459,6 +469,17 @@ onMounted(() => {
 .schedule-grid__calendar {
   background: var(--bg-surface-2);
   border: 1px solid var(--border-color);
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+:deep(.schedule-grid__calendar .el-card__body) {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
 }
 :deep(.el-calendar-table .el-calendar-day:hover) {
   background: transparent;
@@ -547,6 +568,16 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.schedule-card__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.schedule-card__scroll :deep(.el-calendar) {
+  min-height: 0;
 }
 
 .schedule-card__buttons {
