@@ -71,13 +71,14 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch, onMounted } from "vue";
+import { computed, reactive, ref, watch, onMounted, onUnmounted } from "vue";
 import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
 import ModalApp from "./ModalApp.vue";
 import { useDataStore } from "@/store/dataBase";
 import { useAuthStore } from "@/store/auth";
 import { api } from "@/api/client";
+import { getSocket } from "@/lib/socket";
 
 const dataStore = useDataStore();
 const authStore = useAuthStore();
@@ -117,6 +118,7 @@ const normalizeOpacity = (value) => {
 
 const schemaConfig = ref(null);
 const schemaCache = ref(null);
+let socket;
 
 const tablesWithFill = computed(() => {
   const source = schemaConfig.value?.tables;
@@ -330,12 +332,38 @@ const fetchRemoteSchema = async () => {
   }
 };
 
+const handleSchemaUpdated = (payload) => {
+  const incomingSchema = payload?.schema ?? payload ?? null;
+  const updatedAt = payload?.updated_at ?? payload?.updatedAt ?? Date.now();
+  if (!incomingSchema) return;
+  applySchema(incomingSchema);
+  saveLocalSchema(incomingSchema, updatedAt);
+};
+
+const handleTableChanged = () => {
+  fetchReservations();
+};
+
 onMounted(() => {
   const local = loadLocalSchema();
   if (local?.schema) {
     applySchema(local.schema);
   }
   fetchRemoteSchema();
+  socket = getSocket();
+  if (socket) {
+    socket.on("schema_updated", handleSchemaUpdated);
+    socket.on("table_created", handleTableChanged);
+    socket.on("table_deleted", handleTableChanged);
+  }
+});
+
+onUnmounted(() => {
+  if (socket) {
+    socket.off("schema_updated", handleSchemaUpdated);
+    socket.off("table_created", handleTableChanged);
+    socket.off("table_deleted", handleTableChanged);
+  }
 });
 
 watch(date, () => fetchReservations(), { immediate: true });
