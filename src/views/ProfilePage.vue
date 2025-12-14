@@ -269,14 +269,20 @@ const saveProfile = async () => {
 
 const createUser = async () => {
   if (!isAdmin.value) return;
-  if (!newUser.email || !newUser.password) {
+  const email = (newUser.email || "").trim().toLowerCase();
+  const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+  if(!emailPattern.test(email)){
+    ElMessage.warning("Укажите валидный email");
+    return
+  }
+  if (!email || !newUser.password) {
     ElMessage.warning("Укажите email и пароль");
     return;
   }
   sendingInvite.value = true;
   try {
     const payload = {
-      login: newUser.email,
+      login: email,
       password: newUser.password,
       name: newUser.name || "",
       role: newUser.role || "user",
@@ -434,6 +440,7 @@ onMounted(async () => {
 .invite-card__title,
 .settings-card__title {
   margin: 0;
+  color: var(--text-primary);
 }
 
 .invite-card__subtitle,
@@ -488,3 +495,5 @@ onMounted(async () => {
   color: var(--text-secondary);
 }
 </style>
+
+
