@@ -607,6 +607,7 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  max-width: 100%;
 }
 
 .schedule-date__person-avatar {
@@ -619,13 +620,29 @@ onMounted(() => {
 .schedule-date__person-name {
   font-size: 12px;
   white-space: nowrap;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .schedule-date__people {
   display: flex;
+  justify-content: space-around;
   align-items: center;
   gap: 4px;
   flex-wrap: wrap;
+}
+
+/* keep tags within the cell width so dragged items don't overflow */
+.schedule-date__people :deep(.el-tag) {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.schedule-date__people :deep(.el-tag__content) {
+  width: 80%;
 }
 
 .schedule-date__more {
