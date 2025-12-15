@@ -606,8 +606,8 @@ onMounted(async () => {
 
 .profile-page__body {
   max-width: 720px;
-  margin: 32px auto;
-  padding: 0 16px 48px;
+  margin: 0 auto;
+  padding: 20px 16px;
 }
 
 .profile-card {

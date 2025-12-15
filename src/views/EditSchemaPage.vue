@@ -103,8 +103,8 @@ onMounted(() => {
 
 .edit-schema__body {
   max-width: 960px;
-  margin: 24px auto 48px;
-  padding: 0 16px;
+  margin: 0 auto;
+  padding: 20px 16px;
 }
 
 .edit-schema__card {

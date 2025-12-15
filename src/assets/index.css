@@ -10,6 +10,10 @@
   --canvas-bg: #0b1220;
 }
 
+:root {
+  --el-card-padding: 20px;
+}
+
 :root.theme-light {
   --bg-surface: #f8fafc;
   --bg-surface-2: #ffffff;
@@ -142,4 +146,14 @@ html {
 
 .list-pull li {
   background-color: transparent;
+}
+
+@media (max-width: 900px) {
+  :root {
+    --el-card-padding: 10px;
+  }
+  /* Element Plus cards use a scoped variable on the component itself */
+  .el-card {
+    --el-card-padding: 10px !important;
+  }
 }
