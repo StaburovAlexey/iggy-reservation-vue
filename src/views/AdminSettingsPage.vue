@@ -11,7 +11,7 @@
             <div>
               <h3 class="invite-card__title">Пригласить нового пользователя</h3>
               <p class="invite-card__subtitle">
-                Укажите имя, e-mail и роль пользователя, чтобы отправить приглашение в систему.
+                Укажите имя, email и роль, чтобы отправить приглашение в систему.
               </p>
             </div>
           </div>
@@ -26,7 +26,7 @@
               <el-option label="Пользователь" value="user" />
             </el-select>
             <el-button type="primary" :loading="sendingInvite" :disabled="sendingInvite" @click="createUser">
-              Создать пользователя
+              Отправить приглашение
             </el-button>
           </div>
         </el-card>
@@ -34,8 +34,8 @@
         <el-card class="settings-card" shadow="never">
           <div class="settings-card__header">
             <div>
-              <h3 class="settings-card__title">Настройки интеграций</h3>
-              <p class="settings-card__subtitle">Сохраните идентификаторы bot_id, chat_id и admin_chat.</p>
+              <h3 class="settings-card__title">Интеграционные ключи</h3>
+              <p class="settings-card__subtitle">Обновите bot_id, chat_id и admin_chat.</p>
             </div>
           </div>
           <el-form label-position="top" class="settings-form" @submit.prevent>
@@ -48,69 +48,91 @@
             <el-form-item label="admin_chat">
               <el-input v-model="settings.admin_chat" placeholder="-1001234567890" :disabled="loadingSettings" />
             </el-form-item>
-            <div class="settings-form__actions">
+            <div class="settings-form__actions" style="width: 100%;">
               <el-button @click="resetSettings" :disabled="savingSettings || loadingSettings">Сбросить</el-button>
               <el-button type="primary" :loading="savingSettings" :disabled="savingSettings || loadingSettings"
                 @click="saveSettings">
-                Сохранить </el-button>
+                Сохранить интеграцию
+              </el-button>
             </div>
           </el-form>
+        </el-card>
 
-          <el-divider />
-
-          <div class="telegram-link">
-            <div class="telegram-link__header">
-              <div>
-                <h4 class="telegram-link__title">Связь с Telegram</h4>
-                <p class="telegram-link__subtitle">
-                  Используйте команду <code>/link</code> в боте и введите сгенерированный код, чтобы привязать чат.
-                </p>
-              </div>
-              <div class="telegram-link__actions">
-                <el-button type="primary" :loading="telegramLink.loading"
-                  :disabled="telegramLink.loading || loadingSettings" @click="startTelegramLinking">
-                  Сгенерировать код
-                </el-button>
-                <el-button v-if="telegramLink.code" :disabled="telegramLink.loading || loadingSettings"
-                  @click="resetTelegramLink">
-                  Сбросить код
-                </el-button>
-              </div>
-            </div>
-
-            <div v-if="telegramLink.code" class="telegram-link__code-block">
-              <div class="telegram-link__code">{{ telegramLink.code }}</div>
-              <div class="telegram-link__hint">
-                <p>1. Откройте чат с ботом и отправьте команду <code>/link</code>.</p>
-                <p>2. Вставьте код <code>/link {{ telegramLink.code }}</code>.</p>
-                <p>3. После подтверждения чат_id отобразится ниже и будет связан с системой.</p>
-              </div>
-              <div class="telegram-link__status">
-                <el-tag :type="telegramLinkTagType" size="small">
-                  {{ telegramLinkStatusText }}
-                </el-tag>
-                <div class="telegram-link__status-actions">
-                  <el-button size="small" :loading="telegramLink.checking" @click="copyLinkCode">
-                    Скопировать код
-                  </el-button>
-                  <el-button size="small" :loading="telegramLink.checking" :disabled="telegramLink.status === 'linked'"
-                    @click="checkTelegramLinkStatus">
-                    Проверить статус
-                  </el-button>
-                </div>
-              </div>
-              <p v-if="telegramExpiresInMinutes !== null" class="telegram-link__expires">
-                Код действует примерно {{ telegramExpiresInMinutes }} минут.
-              </p>
-              <p v-if="telegramLink.chatId" class="telegram-link__chat">
-                Текущий chat_id:<strong>{{ telegramLink.chatId }}</strong>
-                <span v-if="telegramLink.chatTitle">&nbsp;({{ telegramLink.chatTitle }})</span>
+        <el-card class="telegram-card" shadow="never">
+          <div class="telegram-card__header">
+            <div>
+              <h3 class="telegram-card__title">Связь с Telegram</h3>
+              <p class="telegram-card__subtitle">
+                Отправьте команду <code>/link</code> в бот и вставьте полученный код ниже.
               </p>
             </div>
-            <div v-else class="telegram-link__placeholder">
-              <p>Сгенерируйте код, чтобы связать Telegram-канал и начать получать уведомления.</p>
+            <div class="telegram-card__actions">
+              <el-button type="primary" :loading="telegramLink.loading"
+                :disabled="telegramLink.loading || loadingSettings" @click="startTelegramLinking">
+                Сгенерировать код
+              </el-button>
+              <el-button v-if="telegramLink.code" :disabled="telegramLink.loading || loadingSettings"
+                @click="resetTelegramLink">
+                Очистить
+              </el-button>
             </div>
           </div>
+
+          <div v-if="telegramLink.code" class="telegram-card__code-block">
+            <div class="telegram-card__code">{{ telegramLink.code }}</div>
+            <div class="telegram-card__hint">
+              <p>1. Напишите боту команду <code>/link</code>.</p>
+              <p>2. Вставьте следующий код: <code>/link {{ telegramLink.code }}</code>.</p>
+              <p>3. После подтверждения chat_id появится ниже.</p>
+            </div>
+            <div class="telegram-card__status">
+              <el-tag :type="telegramLinkTagType" size="small">
+                {{ telegramLinkStatusText }}
+              </el-tag>
+              <div class="telegram-card__status-actions">
+                <el-button size="small" :loading="telegramLink.checking" @click="copyLinkCode">
+                  Скопировать код
+                </el-button>
+                <el-button size="small" :loading="telegramLink.checking" :disabled="telegramLink.status === 'linked'"
+                  @click="checkTelegramLinkStatus">
+                  Проверить статус
+                </el-button>
+              </div>
+            </div>
+            <p v-if="telegramExpiresInMinutes !== null" class="telegram-card__expires">
+              Код активен {{ telegramExpiresInMinutes }} минут.
+            </p>
+            <p v-if="telegramLink.chatId" class="telegram-card__chat">
+              chat_id: <strong>{{ telegramLink.chatId }}</strong>
+              <span v-if="telegramLink.chatTitle">&nbsp;({{ telegramLink.chatTitle }})</span>
+            </p>
+          </div>
+          <div v-else class="telegram-card__placeholder">
+            <p>Генерируйте код, чтобы привязать Telegram и получать уведомления.</p>
+          </div>
+        </el-card>
+
+        <el-card class="backup-card" shadow="never">
+          <div class="backup-card__header">
+            <div>
+              <h3 class="backup-card__title">Резервная копия</h3>
+              <p class="backup-card__subtitle">Скачайте архив или загрузите его для восстановления.</p>
+            </div>
+          </div>
+          <div class="backup-card__actions">
+            <el-button type="primary" :loading="backupLoading" @click="downloadBackup">Скачать бекап</el-button>
+            <el-button type="danger" :loading="restoreLoading" :disabled="!restoreFile" @click="restoreBackupFile">
+              Восстановить
+            </el-button>
+          </div>
+          <div class="backup-card__restore">
+            <label class="backup-card__file">
+              <span>Выберите файл (.zip)</span>
+              <input type="file" accept=".zip" @change="handleRestoreFileChange" />
+            </label>
+            <span class="backup-card__file-name">{{ restoreFileName }}</span>
+          </div>
+          <p v-if="restoreStatus" class="backup-card__status">{{ restoreStatus }}</p>
         </el-card>
       </template>
     </div>
@@ -129,10 +151,14 @@ import { useAuthStore } from "@/store/auth";
 const authStore = useAuthStore();
 const router = useRouter();
 
+const initializing = ref(true);
 const sendingInvite = ref(false);
 const loadingSettings = ref(false);
 const savingSettings = ref(false);
-const initializing = ref(true);
+const backupLoading = ref(false);
+const restoreLoading = ref(false);
+const restoreFile = ref(null);
+const restoreStatus = ref("");
 
 const newUser = reactive({
   email: "",
@@ -181,18 +207,18 @@ const telegramLinkTagType = computed(() => {
 
 const telegramLinkStatusText = computed(() => {
   if (telegramLink.status === "linked" && telegramLink.chatId) {
-    return `Готово: ${telegramLink.chatTitle || telegramLink.chatId}`;
+    return `Связано с ${telegramLink.chatTitle || telegramLink.chatId}`;
   }
   if (telegramLink.status === "waiting") {
-    return "Ждём команду /link в группе";
+    return "Ожидаем привязку: отправьте /link";
   }
   if (telegramLink.status === "expired") {
-    return "Код истёк, сгенерируйте новый";
+    return "Код устарел, сгенерируйте новый";
   }
   if (telegramLink.status === "error") {
-    return telegramLink.error || "Ошибка привязки";
+    return telegramLink.error || "Ошибка связи с Telegram";
   }
-  return "Получите код и отправьте его в группу";
+  return "Сгенерируйте код для привязки";
 });
 
 const telegramExpiresInMinutes = computed(() => {
@@ -201,16 +227,18 @@ const telegramExpiresInMinutes = computed(() => {
   return diff > 0 ? diff : 0;
 });
 
+const restoreFileName = computed(() => (restoreFile.value ? restoreFile.value.name : "Файл не выбран"));
+
 const createUser = async () => {
   if (!isAdmin.value) return;
   const email = (newUser.email || "").trim().toLowerCase();
   const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
   if (!emailPattern.test(email)) {
-    ElMessage.warning("Укажите корректный адрес e-mail.");
+    ElMessage.warning("Укажите корректный адрес электронной почты.");
     return;
   }
   if (!email || !newUser.password) {
-    ElMessage.warning("Введите электронную почту и пароль.");
+    ElMessage.warning("Введите e-mail и пароль.");
     return;
   }
   sendingInvite.value = true;
@@ -224,17 +252,17 @@ const createUser = async () => {
     };
     const resp = await api.registerUser(payload);
     if (resp?.user) {
-      ElMessage.success("Пользователь приглашён.");
+      ElMessage.success("Приглашение отправлено.");
       newUser.email = "";
       newUser.name = "";
       newUser.password = "";
       newUser.role = "user";
     } else {
-      ElMessage.error("Не удалось пригласить пользователя.");
+      ElMessage.error("Не удалось отправить приглашение.");
     }
   } catch (error) {
     console.log(error);
-    ElMessage.error("Приглашение не отправлено, попробуйте позже.");
+    ElMessage.error("Не удалось отправить приглашение.");
   } finally {
     sendingInvite.value = false;
   }
@@ -292,11 +320,11 @@ const startTelegramLinking = async () => {
       throw new Error("no-link-code");
     }
     telegramStatusTimer = setInterval(() => checkTelegramLinkStatus(true), 4000);
-    ElMessage.success("Сейчас вы можете отправить команду /link в Telegram-боте.");
+    ElMessage.success("Отправьте /link в Telegram-боте для привязки.");
   } catch (error) {
     console.log(error);
     telegramLink.status = "error";
-    telegramLink.error = "گ?گç ‘?گ?گّگ>گ?‘?‘? گُگ?گ>‘?‘طگٌ‘'‘? گَگ?گ? گُ‘?گٌگ?‘?گْگَگٌ";
+    telegramLink.error = "Не удалось создать код";
     ElMessage.error(telegramLink.error);
   } finally {
     telegramLink.loading = false;
@@ -327,7 +355,7 @@ const checkTelegramLinkStatus = async (silent = false) => {
       settings.chat_id = chatId;
       originalSettings.chat_id = chatId;
       clearTelegramTimer();
-      ElMessage.success("Связь установлена, chat_id сохранён.");
+      ElMessage.success("Ссылка с Telegram установлена.");
       return;
     }
 
@@ -335,7 +363,7 @@ const checkTelegramLinkStatus = async (silent = false) => {
   } catch (error) {
     console.log(error);
     telegramLink.status = "error";
-    telegramLink.error = "گ?گç ‘?گ?گّگ>گ?‘?‘? گُ‘?گ?گ?گç‘?گٌ‘'‘? ‘?‘'گّ‘'‘?‘? گُ‘?گٌگ?‘?گْگَگٌ";
+    telegramLink.error = "Ошибка проверки Telegram";
     clearTelegramTimer();
   } finally {
     telegramLink.checking = false;
@@ -395,12 +423,59 @@ const saveSettings = async () => {
     originalSettings.chat_id = s.chat_id || "";
     originalSettings.admin_chat = s.admin_chat || "";
     resetSettings();
-    ElMessage.success("Настройки обновлены.");
+    ElMessage.success("Настройки сохранены.");
   } catch (error) {
     console.log(error);
     ElMessage.error("Не удалось сохранить настройки.");
   } finally {
     savingSettings.value = false;
+  }
+};
+
+const downloadBackup = async () => {
+  backupLoading.value = true;
+  try {
+    const payload = await api.downloadBackup();
+    const url = URL.createObjectURL(payload.blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = payload.filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    ElMessage.success("Резервная копия скачана.");
+  } catch (error) {
+    console.log(error);
+    ElMessage.error("Не удалось скачать бекап.");
+  } finally {
+    backupLoading.value = false;
+  }
+};
+
+const handleRestoreFileChange = (event) => {
+  restoreStatus.value = "";
+  const file = event.target?.files?.[0] || null;
+  restoreFile.value = file;
+};
+
+const restoreBackupFile = async () => {
+  if (!restoreFile.value) {
+    ElMessage.warning("Выберите архив для восстановления.");
+    return;
+  }
+  restoreLoading.value = true;
+  try {
+    await api.restoreBackup(restoreFile.value);
+    restoreStatus.value = "Восстановление успешно выполнено.";
+    ElMessage.success("Бекап восстановлен.");
+  } catch (error) {
+    console.log(error);
+    const message = error?.response?.error || "Не удалось восстановить бекап.";
+    restoreStatus.value = message;
+    ElMessage.error(message);
+  } finally {
+    restoreLoading.value = false;
   }
 };
 
@@ -410,7 +485,7 @@ onUnmounted(() => {
 
 onMounted(async () => {
   if (!isAdmin.value) {
-    ElMessage.warning("У вас нет доступа к этому разделу.");
+    ElMessage.warning("Доступ к этому разделу разрешён только администраторам.");
     router.push("/");
     return;
   }
@@ -428,7 +503,7 @@ onMounted(async () => {
 }
 
 .admin-settings-page__body {
-  max-width: 820px;
+  max-width: 860px;
   margin: 0 auto;
   padding: 20px 16px;
   display: flex;
@@ -444,32 +519,47 @@ onMounted(async () => {
 }
 
 .invite-card,
-.settings-card {
+.settings-card,
+.telegram-card,
+.backup-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
 }
 
 .invite-card__header,
-.settings-card__header {
+.settings-card__header,
+.telegram-card__header,
+.backup-card__header {
   margin-bottom: 8px;
 }
 
 .invite-card__title,
-.settings-card__title {
+.settings-card__title,
+.telegram-card__title,
+.backup-card__title {
   margin: 0;
   color: var(--text-primary);
 }
 
+.telegram-card__actions {
+  width: 100%;
+}
+
 .invite-card__subtitle,
-.settings-card__subtitle {
+.settings-card__subtitle,
+.telegram-card__subtitle,
+.backup-card__subtitle {
   margin: 4px 0 0;
   color: var(--text-secondary);
   font-size: 13px;
 }
 
-.invite-card__form {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+.invite-card__form,
+.settings-form,
+.telegram-card__header,
+.backup-card__actions {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
 }
@@ -487,51 +577,20 @@ onMounted(async () => {
   margin-left: 0;
 }
 
-.settings-form__actions .el-button+.el-button {
-  margin-left: 0;
+.telegram-card__subtitle code {
+  font-size: 11px;
 }
 
-.telegram-link {
-  margin-top: 16px;
-  padding: 12px;
-  border: 1px dashed var(--border-color);
-  border-radius: 12px;
-  background: var(--bg-surface);
-}
-
-.telegram-link__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.telegram-link__title {
-  margin: 0;
-  color: var(--text-primary);
-}
-
-.telegram-link__subtitle {
-  margin: 4px 0 0;
-  color: var(--text-primary);
-  opacity: 0.9;
-}
-
-.telegram-link__actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.telegram-link__code-block {
+.telegram-card__code-block {
   margin-top: 12px;
-  display: grid;
-  gap: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.telegram-link__code {
+.telegram-card__code {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 22px;
   font-weight: 700;
@@ -543,38 +602,66 @@ onMounted(async () => {
   text-align: center;
 }
 
-.telegram-link__hint {
+.telegram-card__hint {
   background: var(--bg-surface-2);
   border-radius: 10px;
   padding: 10px 12px;
   border: 1px solid var(--border-color);
   color: var(--text-primary);
-  opacity: 0.92;
+  opacity: 0.9;
 }
 
-.telegram-link__hint p {
-  margin: 4px 0;
-}
-
-.telegram-link__status {
+.telegram-card__status {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 12px;
   flex-wrap: wrap;
+  justify-content: space-between;
 }
 
-.telegram-link__status-actions {
+.telegram-card__status-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.telegram-link__expires,
-.telegram-link__chat,
-.telegram-link__placeholder {
+.telegram-card__expires,
+.telegram-card__chat,
+.telegram-card__placeholder {
   margin: 0;
   color: var(--text-primary);
-  opacity: 0.9;
+}
+
+.backup-card__actions {
+  margin-bottom: 12px;
+}
+
+.backup-card__restore {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.backup-card__file {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.backup-card__file input {
+  display: none;
+}
+
+.backup-card__file-name {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.backup-card__status {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 </style>

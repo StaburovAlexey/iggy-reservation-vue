@@ -118,6 +118,16 @@ export const apiClient = {
   clearToken,
 };
 
+const parseFilenameFromDisposition = (header = "") => {
+  if (!header) return null;
+  const extendedMatch = /filename\*=UTF-8''([^;]+)/i.exec(header);
+  if (extendedMatch) {
+    return decodeURIComponent(extendedMatch[1]);
+  }
+  const match = /filename="?([^"]+)"?/i.exec(header);
+  return match ? match[1] : null;
+};
+
 export const api = {
   login: async (credentials) => {
     const result = await apiClient.post("/login", { body: credentials, auth: false });
@@ -144,6 +154,28 @@ export const api = {
     const dateKey = encodeURIComponent(date);
     const body = payload?.date ? payload : { ...payload, date };
     return apiClient.post(`/schedule/${dateKey}`, { body });
+  },
+  downloadBackup: async () => {
+    const url = buildUrl("/backup/create");
+    const headers = {};
+    if (authToken) {
+      headers.Authorization = `Bearer ${authToken}`;
+    }
+    const response = await fetch(url, { method: "GET", headers });
+    if (!response.ok) {
+      const error = new Error(`Failed to download backup (${response.status})`);
+      error.status = response.status;
+      throw error;
+    }
+    const blob = await response.blob();
+    const disposition = response.headers.get("content-disposition");
+    const filename = parseFilenameFromDisposition(disposition) || `backup-${Date.now()}.zip`;
+    return { blob, filename };
+  },
+  restoreBackup: (file) => {
+    const formData = new FormData();
+    formData.append("backup", file);
+    return apiClient.request("/backup/restore", { method: "POST", body: formData });
   },
 };
 
