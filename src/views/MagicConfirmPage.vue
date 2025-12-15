@@ -15,11 +15,11 @@
         <p v-else class="magic-confirm__error">{{ error || "Произошла неизвестная ошибка." }}</p>
       </div>
 
-      <el-form class="magic-confirm__form" @submit.prevent="submit">
-        <el-form-item label="E-mail">
+      <el-form class="magic-confirm__form" label-position="top" @submit.prevent="submit">
+        <el-form-item label="E-mail" class="magic-confirm__form-item">
           <el-input v-model="form.email" autocomplete="email" type="email" placeholder="email@example.com" />
         </el-form-item>
-        <el-form-item label="Пароль">
+        <el-form-item label="Пароль" class="magic-confirm__form-item">
           <el-input
             v-model="form.password"
             type="password"
@@ -28,7 +28,7 @@
             show-password
           />
         </el-form-item>
-        <el-form-item label="Имя (необязательно)">
+        <el-form-item label="Имя (необязательно)" class="magic-confirm__form-item">
           <el-input v-model="form.name" autocomplete="name" placeholder="Иванов" />
         </el-form-item>
         <p v-if="formError" class="magic-confirm__error">{{ formError }}</p>
@@ -157,8 +157,6 @@ onMounted(performCheck);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
-  background: linear-gradient(145deg, var(--gradient-start), var(--gradient-end));
 }
 
 .magic-confirm__card {
@@ -201,7 +199,22 @@ onMounted(performCheck);
   margin-top: 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+}
+
+.magic-confirm__form-item {
+  width: 100%;
+}
+
+.magic-confirm__form-item .el-form-item__label {
+  width: 100%;
+  text-align: left;
+  margin-bottom: 8px;
+}
+
+.magic-confirm__form-item .el-input,
+.magic-confirm__form-item .el-input__inner {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .magic-confirm__form-actions {
