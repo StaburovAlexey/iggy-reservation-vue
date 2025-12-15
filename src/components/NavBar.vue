@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <header class="navbar">
     <div class="navbar__left">
       <div class="navbar__brand" @click="refresh">
@@ -10,27 +10,50 @@
       <div class="navbar__menu-btn">
         <el-avatar :size="36" :src="avatarUrl" class="navbar__avatar">{{ avatarFallback }}</el-avatar>
         <span class="navbar__name">{{ userName }}</span>
-        <el-icon><ArrowDown /></el-icon>
+        <el-icon>
+          <ArrowDown />
+        </el-icon>
       </div>
       <template #dropdown>
-          <el-dropdown-menu class="navbar__dropdown">
-            <el-dropdown-item class="navbar__user">
-              <el-avatar :size="40" :src="avatarUrl" class="navbar__avatar">{{ avatarFallback }}</el-avatar>
+        <el-dropdown-menu class="navbar__dropdown">
+          <el-dropdown-item class="navbar__user">
+            <el-avatar :size="40" :src="avatarUrl" class="navbar__avatar">{{ avatarFallback }}</el-avatar>
             <div class="navbar__user-info">
               <div class="navbar__user-name">{{ userName }}</div>
               <div class="navbar__user-mail">{{ userEmail }}</div>
             </div>
           </el-dropdown-item>
-          <el-dropdown-item divided @click="editProfile">
+          <el-dropdown-item
+            @click="goHome"
+            :style="isActiveRoute('/') ? activeDropdownStyle : {}"
+          >
+            На главную
+          </el-dropdown-item>
+          <el-dropdown-item
+            divided
+            @click="editProfile"
+            :style="isActiveRoute('/profile') ? activeDropdownStyle : {}"
+          >
             Профиль
           </el-dropdown-item>
-          <el-dropdown-item @click="goSchedule">
+          <el-dropdown-item
+            @click="goSchedule"
+            :style="isActiveRoute('/schedule') ? activeDropdownStyle : {}"
+          >
             Расписание
           </el-dropdown-item>
-          <el-dropdown-item v-if="isAdmin" @click="editSchema">
+          <el-dropdown-item
+            v-if="isAdmin"
+            @click="editSchema"
+            :style="isActiveRoute('/edit-shema') ? activeDropdownStyle : {}"
+          >
             Редактировать плана-схему
           </el-dropdown-item>
-          <el-dropdown-item v-if="isAdmin" @click="goAdminSettings">
+          <el-dropdown-item
+            v-if="isAdmin"
+            @click="goAdminSettings"
+            :style="isActiveRoute('/admin-settings') ? activeDropdownStyle : {}"
+          >
             Настройки
           </el-dropdown-item>
           <el-dropdown-item @click="toggleTheme">
@@ -47,7 +70,7 @@
 
 <script setup>
 import { computed, ref, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { ArrowDown } from "@element-plus/icons-vue";
 import { storeToRefs } from "pinia";
 import { useDataStore } from "@/store/dataBase";
@@ -65,8 +88,24 @@ const isRoomReserved = computed(() => reservations.value.some((item) => item.tab
 const isAdmin = computed(() => (user.value?.role || user.value?.user_metadata?.role) === "admin");
 
 const router = useRouter();
+const route = useRoute();
 const THEME_KEY = "iggy-theme";
 const theme = ref(localStorage.getItem(THEME_KEY) || "dark");
+const currentPath = computed(() => route.path);
+const activeDropdownStyle = {
+  backgroundColor: "rgba(255, 255, 255, 0.08)",
+  color: "black",
+  fontWeight: 600,
+};
+
+const normalizePath = (value) =>
+  value.endsWith("/") && value.length > 1 ? value.slice(0, -1) : value;
+
+const isActiveRoute = (path) => {
+  const target = normalizePath(path);
+  const current = normalizePath(currentPath.value);
+  return current === target || current.startsWith(`${target}/`);
+};
 
 const userName = computed(
   () =>
@@ -94,17 +133,14 @@ watch(
   { immediate: true }
 );
 
-const nextThemeLabel = computed(() =>
-  theme.value === "light" ? "Тёмная" : "Светлая"
-);
+const nextThemeLabel = computed(() => (theme.value === "light" ? "Тёмная" : "Светлая"));
 
 const refresh = () => {
   dataStore.fetchInfo().catch((error) => console.log(error));
 };
 
-const goSchedule = () => {
-  router.push("/schedule");
-};
+const goHome = () => router.push("/");
+const goSchedule = () => router.push("/schedule");
 
 const toggleTheme = () => {
   theme.value = theme.value === "light" ? "dark" : "light";

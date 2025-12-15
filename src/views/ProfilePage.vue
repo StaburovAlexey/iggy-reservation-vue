@@ -8,10 +8,7 @@
       <el-card v-else class="profile-card" shadow="hover">
         <div class="profile-card__header">
           <div>
-            <h2 class="profile-card__title">
-              Профиль
-              <el-button style="float: right;" @click="goHome">На главную</el-button>
-            </h2>
+            <h2 class="profile-card__title">Профиль</h2>
             <p class="profile-card__subtitle">Обновите имя, e-mail и аватар.</p>
           </div>
         </div>
@@ -179,10 +176,6 @@ const saveProfile = async () => {
   } finally {
     saving.value = false;
   }
-};
-
-const goHome = () => {
-  router.push("/");
 };
 
 onMounted(async () => {
