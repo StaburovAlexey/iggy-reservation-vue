@@ -48,6 +48,15 @@ const routes = [
     component: () => import("../views/AdminSettingsPage.vue"),
   },
   {
+    path: "/invite/confirm",
+    name: "invite-confirm",
+    meta: {
+      layout: "main",
+      auth: false,
+    },
+    component: () => import("../views/InviteConfirmPage.vue"),
+  },
+  {
     path: "/schedule",
     name: "schedule",
     meta: {

@@ -112,6 +112,32 @@
           </div>
         </el-card>
 
+        <el-card class="magic-card" shadow="never">
+          <div class="magic-card__header">
+            <div>
+              <h3 class="magic-card__title">Ссылка для регистрации</h3>
+              <p class="magic-card__subtitle">Отправьте пользователю одноразовую ссылку на почту.</p>
+            </div>
+          </div>
+          <div class="magic-card__form">
+            <el-input
+              v-model="inviteEmail"
+              placeholder="Email адрес"
+              type="email"
+              :disabled="inviteSending"
+            />
+            <el-button
+              type="primary"
+              :loading="inviteSending"
+              :disabled="!inviteEmail || inviteSending"
+              @click="sendInvitationLink"
+            >
+              Отправить ссылку
+            </el-button>
+          </div>
+          <p v-if="inviteStatus" class="magic-card__status">{{ inviteStatus }}</p>
+        </el-card>
+
         <el-card class="backup-card" shadow="never">
           <div class="backup-card__header">
             <div>
@@ -159,6 +185,9 @@ const backupLoading = ref(false);
 const restoreLoading = ref(false);
 const restoreFile = ref(null);
 const restoreStatus = ref("");
+const inviteEmail = ref("");
+const inviteSending = ref(false);
+const inviteStatus = ref("");
 
 const newUser = reactive({
   email: "",
@@ -479,6 +508,27 @@ const restoreBackupFile = async () => {
   }
 };
 
+const sendInvitationLink = async () => {
+  if (!inviteEmail.value) {
+    inviteStatus.value = "Введите email.";
+    return;
+  }
+  inviteSending.value = true;
+  inviteStatus.value = "";
+  try {
+    await api.sendInvitation({ email: inviteEmail.value });
+    ElMessage.success("Ссылка отправлена.");
+    inviteStatus.value = "Письмо с ссылкой отправлено.";
+  } catch (error) {
+    console.log(error);
+    const message = error?.response?.error || "Не удалось отправить ссылку.";
+    inviteStatus.value = message;
+    ElMessage.error(message);
+  } finally {
+    inviteSending.value = false;
+  }
+};
+
 onUnmounted(() => {
   clearTelegramTimer();
 });
@@ -663,5 +713,38 @@ onMounted(async () => {
   margin-top: 8px;
   font-size: 13px;
   color: var(--text-secondary);
+}
+
+.magic-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+}
+
+.magic-card__header {
+  margin-bottom: 8px;
+}
+
+.magic-card__title {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.magic-card__subtitle {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.magic-card__form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.magic-card__status {
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
 }
 </style>

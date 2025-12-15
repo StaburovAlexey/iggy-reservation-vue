@@ -177,6 +177,8 @@ export const api = {
     formData.append("backup", file);
     return apiClient.request("/backup/restore", { method: "POST", body: formData });
   },
+  sendInvitation: (payload) => apiClient.post("/invitations", { body: payload }),
+  confirmInvitation: (payload) => apiClient.post("/invitations/confirm", { body: payload }),
 };
 
 export { API_BASE_URL, setToken, getToken, clearToken };
