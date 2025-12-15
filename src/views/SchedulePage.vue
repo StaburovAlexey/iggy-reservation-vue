@@ -26,6 +26,18 @@
             </div>
           </div>
 
+                                                            <div class="schedule-card__legend">
+            <div class="schedule-card__legend-item schedule-card__legend-item--opening">
+              <span>Открытие — зелёный</span>
+            </div>
+            <div class="schedule-card__legend-item schedule-card__legend-item--closing">
+              <span>Закрытие — оранжевый</span>
+            </div>
+            <div class="schedule-card__legend-item schedule-card__legend-item--helpers">
+              <span>Помощь — синий</span>
+            </div>
+          </div>
+
           <div class="schedule-card__scroll">
             <el-calendar v-model="calendarValue" :range="calendarRange" @panel-change="handlePanelChange">
               <template #date-cell="{ data }">
@@ -861,6 +873,56 @@ watch(isAdmin, (next) => {
   gap: 8px;
 
   flex-wrap: wrap;
+}
+
+.schedule-card__legend {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 8px;
+
+  font-size: 12px;
+
+  color: var(--text-secondary);
+
+  margin-bottom: 6px;
+}
+
+.schedule-card__legend-item {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  padding: 4px 8px;
+
+  border-radius: 999px;
+
+  border: 1px solid transparent;
+}
+
+.schedule-card__legend-item span {
+  font-size: 12px;
+}
+
+.schedule-card__legend-item--opening {
+  border-color: #22c55e;
+
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.schedule-card__legend-item--closing {
+  border-color: #f59e0b;
+
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.schedule-card__legend-item--helpers {
+  border-color: #0284c7;
+
+  background: rgba(2, 132, 199, 0.15);
 }
 
 .schedule-card__scroll {
