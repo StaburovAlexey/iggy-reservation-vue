@@ -32,7 +32,8 @@
                 <div class="schedule-date" :class="{
                   'is-today': isToday(data.day),
                   'is-compact': isCompactView,
-                }">
+                  'has-current-user': hasCurrentUser(data.day),
+                }" @click="handleDayClick(data.day)">
                   <div class="schedule-date__header">
                     <span class="schedule-date__day">{{
                       dayNumber(data.day)
@@ -80,6 +81,32 @@
                 </div>
               </template>
             </el-calendar>
+
+            <el-dialog v-model="detailDialogVisible" :title="selectedDateTitle" width="80%" append-to-body
+              @closed="selectedDate = null">
+              <div class="schedule-dialog" v-if="selectedDate">
+                <div class="schedule-dialog__groups">
+                  <div v-for="group in selectedDayGroups" :key="group.key"
+                    class="schedule-date__group schedule-date__group--dialog">
+                    <div class="schedule-date__group-name">{{ group.label }}</div>
+
+                    <div class="schedule-date__people schedule-date__people--dialog" v-if="group.people.length">
+                      <el-tag v-for="person in group.people" :key="person.id" :type="group.tag" size="small" round
+                        :closable="isAdmin" @close.stop="removePersonFromDate(selectedDate, group.key, person.id)">
+                        <div class="schedule-date__person">
+                          <el-avatar size="small" :src="person.avatar" class="schedule-date__person-avatar">
+                            {{ person.name ? person.name.charAt(0).toUpperCase() : "" }}
+                          </el-avatar>
+                          <span class="schedule-date__person-name">{{ person.name }}</span>
+                        </div>
+                      </el-tag>
+                    </div>
+
+                    <div v-else class="schedule-dialog__empty">Нет записей</div>
+                  </div>
+                </div>
+              </div>
+            </el-dialog>
           </div>
         </el-card>
 
@@ -103,8 +130,6 @@
                 <span class="employee-pill__name">{{ emp.name }}</span>
               </div>
             </el-tag>
-
-            <el-empty v-if="!employees.length" description="Нет сотрудников"></el-empty>
           </div>
         </el-card>
       </div>
@@ -132,7 +157,7 @@ const GROUPS = [
 
   { key: "closing", label: "Закрытие", tag: "warning" },
 
-  { key: "helpers", label: "Подмога", tag: "info", hint: "Для подмоги" },
+  { key: "helpers", label: "Помощь", tag: "info", hint: "Для подмоги" },
 ];
 
 const authStore = useAuthStore();
@@ -142,6 +167,17 @@ const isAdmin = computed(
     authStore.user?.role === "admin" ||
     authStore.user?.user_metadata?.role === "admin"
 );
+
+const currentUserId = computed(() => {
+  const user = authStore.user || {};
+  return user.uuid
+
+});
+
+const currentUserName = computed(() => {
+  const user = authStore.user || {};
+  return (user.name || user.login || "").trim();
+});
 
 const currentMonth = ref(dayjs().startOf("month"));
 
@@ -168,6 +204,18 @@ const draggingEmployee = ref(null);
 const scheduleMap = ref({});
 
 const isCompactView = ref(false);
+
+const detailDialogVisible = ref(false);
+
+const selectedDate = ref(null);
+
+const selectedDateTitle = computed(() =>
+  selectedDate.value ? dayjs(selectedDate.value).format("DD MMMM YYYY") : ""
+);
+
+const selectedDayGroups = computed(() =>
+  selectedDate.value ? previewGroups(selectedDate.value) : []
+);
 
 const updateCompactFlag = () => {
   if (typeof window === "undefined") return;
@@ -380,6 +428,32 @@ const getDayData = (date) => {
   const key = formatDateKey(date);
 
   return scheduleMap.value[key] || emptyDay();
+};
+
+const matchesCurrentUser = (person = {}) => {
+  const userId = String(currentUserId.value || "").toLowerCase();
+  const userName = String(currentUserName.value || "").toLowerCase();
+  if (!userId && !userName) return false;
+
+  const personId = String(person.id || "").toLowerCase();
+  const personName = String(person.name || "").toLowerCase();
+
+  return (userId && personId === userId) || (userName && personName === userName);
+};
+
+const hasCurrentUser = (date) => {
+  const data = getDayData(date);
+  if (!currentUserId.value && !currentUserName.value) return false;
+
+  return GROUPS.some((group) =>
+    (data[group.key] || []).some((person) => matchesCurrentUser(person))
+  );
+};
+
+const handleDayClick = (date) => {
+  if (!isCompactView.value) return;
+  selectedDate.value = date;
+  detailDialogVisible.value = true;
 };
 
 const serializeGroupForSave = (list = []) =>
@@ -607,6 +681,10 @@ watch(isAdmin, (next) => {
     linear-gradient(180deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
 }
 
+.schedule-page :deep(.el-calendar__header) {
+  display: none;
+}
+
 .schedule-page__body {
   flex: 1;
 
@@ -815,9 +893,18 @@ watch(isAdmin, (next) => {
   border-color: #409eff;
 }
 
+.schedule-date.has-current-user {
+  border-color: #22c55e;
+
+  background: rgba(34, 197, 94, 0.12);
+
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.2);
+}
+
 .schedule-date.is-compact {
   min-height: 32px;
   padding: 6px 4px;
+  cursor: pointer;
 }
 
 .schedule-date.is-compact .schedule-date__header {
@@ -829,7 +916,6 @@ watch(isAdmin, (next) => {
 }
 
 .schedule-date.is-compact :deep(.el-tag) {
-  margin-left: auto;
 
   padding: 0 6px;
 
@@ -950,7 +1036,37 @@ watch(isAdmin, (next) => {
   color: var(--text-secondary);
 }
 
+.schedule-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.schedule-dialog__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.schedule-date__group--dialog {
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.schedule-date__people--dialog {
+  gap: 6px;
+  justify-content: flex-start;
+}
+
+.schedule-dialog__empty {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 4px 0;
+}
+
 @media (max-width: 900px) {
+
   .schedule-card__header {
     align-items: flex-start;
   }
@@ -983,7 +1099,8 @@ watch(isAdmin, (next) => {
   .schedule-date__groups {
     display: none;
   }
-  .schedule-date__header{
+
+  .schedule-date__header {
     flex-direction: column;
   }
 }

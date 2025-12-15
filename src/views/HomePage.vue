@@ -1,9 +1,7 @@
 <template>
-
   <NavBar />
   <BarTheme class="page__content" />
   <FooterApp />
-
 </template>
 
 <script setup>
