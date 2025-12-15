@@ -30,6 +30,9 @@
           <el-dropdown-item v-if="isAdmin" @click="editSchema">
             Редактировать плана-схему
           </el-dropdown-item>
+          <el-dropdown-item v-if="isAdmin" @click="goAdminSettings">
+            Настройки
+          </el-dropdown-item>
           <el-dropdown-item @click="toggleTheme">
             Тема: {{ nextThemeLabel }}
           </el-dropdown-item>
@@ -113,6 +116,10 @@ const editProfile = () => {
 
 const editSchema = () => {
   router.push("/edit-shema");
+};
+
+const goAdminSettings = () => {
+  router.push("/admin-settings");
 };
 
 const logout = async () => {

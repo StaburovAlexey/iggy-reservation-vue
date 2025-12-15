@@ -56,144 +56,14 @@
             </el-button>
           </div>
         </el-form>
-        <el-card v-if="isAdmin" class="invite-card" shadow="never">
-          <div class="invite-card__header">
-            <div>
-              <h3 class="invite-card__title">Создать пользователя</h3>
-              <p class="invite-card__subtitle">
-                Админ может создать аккаунт, задав e-mail, имя, пароль и роль.
-              </p>
-            </div>
-          </div>
-          <div class="invite-card__form">
-            <el-input
-              v-model="newUser.email"
-              type="email"
-              placeholder="email пользователя"
-              :disabled="sendingInvite"
-            />
-            <el-input v-model="newUser.name" placeholder="Имя" :disabled="sendingInvite" />
-            <el-input
-              v-model="newUser.password"
-              type="password"
-              placeholder="Пароль"
-              :disabled="sendingInvite"
-              show-password
-            />
-            <el-select v-model="newUser.role" placeholder="Роль" style="min-width: 140px" :disabled="sendingInvite">
-              <el-option label="Админ" value="admin" />
-              <el-option label="Пользователь" value="user" />
-            </el-select>
-            <el-button type="primary" :loading="sendingInvite" :disabled="sendingInvite" @click="createUser">
-              Создать
-            </el-button>
-          </div>
-        </el-card>
-
-        <el-card v-if="isAdmin" class="settings-card" shadow="never">
-          <div class="settings-card__header">
-            <div>
-              <h3 class="settings-card__title">Настройки бота</h3>
-              <p class="settings-card__subtitle">Измените bot_id, chat_id и admin_chat.</p>
-            </div>
-          </div>
-          <el-form label-position="top" class="settings-form" @submit.prevent>
-            <el-form-item label="bot_id">
-              <el-input v-model="settings.bot_id" placeholder="123456:ABCD..." :disabled="loadingSettings" />
-            </el-form-item>
-            <el-form-item label="chat_id">
-              <el-input v-model="settings.chat_id" placeholder="-1001234567890" :disabled="loadingSettings" />
-            </el-form-item>
-            <el-form-item label="admin_chat">
-              <el-input v-model="settings.admin_chat" placeholder="-1001234567890" :disabled="loadingSettings" />
-            </el-form-item>
-            <div class="settings-form__actions">
-              <el-button @click="resetSettings" :disabled="savingSettings || loadingSettings">Сбросить</el-button>
-              <el-button
-                type="primary"
-                :loading="savingSettings"
-                :disabled="savingSettings || loadingSettings"
-                @click="saveSettings"
-              >
-                Сохранить настройки
-              </el-button>
-            </div>
-          </el-form>
-
-          <el-divider />
-
-          <div class="telegram-link">
-            <div class="telegram-link__header">
-              <div>
-                <h4 class="telegram-link__title">Привязка приватной группы</h4>
-                <p class="telegram-link__subtitle">
-                  Получите код /link, добавьте бота в группу и отправьте команду, чтобы автоматически подставить chat_id.
-                </p>
-              </div>
-              <div class="telegram-link__actions">
-                <el-button
-                  type="primary"
-                  :loading="telegramLink.loading"
-                  :disabled="telegramLink.loading || loadingSettings"
-                  @click="startTelegramLinking"
-                >
-                  Привязать группу
-                </el-button>
-                <el-button
-                  v-if="telegramLink.code"
-                  :disabled="telegramLink.loading || loadingSettings"
-                  @click="resetTelegramLink"
-                >
-                  Сбросить код
-                </el-button>
-              </div>
-            </div>
-
-            <div v-if="telegramLink.code" class="telegram-link__code-block">
-              <div class="telegram-link__code">{{ telegramLink.code }}</div>
-              <div class="telegram-link__hint">
-                <p>1. Добавьте бота в приватную группу.</p>
-                <p>2. Отправьте в группе команду: <code>/link {{ telegramLink.code }}</code></p>
-                <p>3. После ответа бота мы заберём chat_id через API и заполним настройки.</p>
-              </div>
-              <div class="telegram-link__status">
-                <el-tag :type="telegramLinkTagType" size="small">
-                  {{ telegramLinkStatusText }}
-                </el-tag>
-                <div class="telegram-link__status-actions">
-                  <el-button size="small" :loading="telegramLink.checking" @click="copyLinkCode">
-                    Скопировать код
-                  </el-button>
-                  <el-button
-                    size="small"
-                    :loading="telegramLink.checking"
-                    :disabled="telegramLink.status === 'linked'"
-                    @click="checkTelegramLinkStatus"
-                  >
-                    Обновить статус
-                  </el-button>
-                </div>
-              </div>
-              <p v-if="telegramExpiresInMinutes !== null" class="telegram-link__expires">
-                Код действует примерно {{ telegramExpiresInMinutes }} минут.
-              </p>
-              <p v-if="telegramLink.chatId" class="telegram-link__chat">
-                Текущий chat_id: <strong>{{ telegramLink.chatId }}</strong>
-                <span v-if="telegramLink.chatTitle">&nbsp;({{ telegramLink.chatTitle }})</span>
-              </p>
-            </div>
-            <div v-else class="telegram-link__placeholder">
-              <p>Нажмите «Привязать группу», чтобы получить одноразовый код.</p>
-            </div>
-          </div>
-        </el-card>
       </el-card>
     </div>
   </div>
 </template>
 
+
 <script setup>
-import { computed, onMounted, onUnmounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import NavBar from "@/components/NavBar.vue";
@@ -207,9 +77,6 @@ const router = useRouter();
 const loadingProfile = ref(true);
 const saving = ref(false);
 const avatarFile = ref(null);
-const sendingInvite = ref(false);
-const loadingSettings = ref(false);
-const savingSettings = ref(false);
 
 const form = reactive({
   fullName: "",
@@ -223,41 +90,6 @@ const original = reactive({
   avatarUrl: "",
 });
 
-const newUser = reactive({
-  email: "",
-  name: "",
-  password: "",
-  role: "user",
-});
-
-const settings = reactive({
-  bot_id: "",
-  chat_id: "",
-  admin_chat: "",
-});
-const originalSettings = reactive({
-  bot_id: "",
-  chat_id: "",
-  admin_chat: "",
-});
-
-const telegramLink = reactive({
-  code: "",
-  status: "idle",
-  expiresIn: null,
-  expiresAt: null,
-  ttlMinutes: null,
-  chatId: "",
-  chatTitle: "",
-  error: "",
-  loading: false,
-  checking: false,
-});
-
-let telegramStatusTimer = null;
-
-const isAdmin = computed(() => authStore.user?.role === "admin");
-
 const canSave = computed(
   () =>
     !loadingProfile.value &&
@@ -268,36 +100,6 @@ const canSave = computed(
       !!form.password ||
       !!avatarFile.value)
 );
-
-const telegramLinkTagType = computed(() => {
-  if (telegramLink.status === "linked") return "success";
-  if (telegramLink.status === "waiting") return "info";
-  if (telegramLink.status === "expired") return "warning";
-  if (telegramLink.status === "error") return "danger";
-  return "info";
-});
-
-const telegramLinkStatusText = computed(() => {
-  if (telegramLink.status === "linked" && telegramLink.chatId) {
-    return `Готово: ${telegramLink.chatTitle || telegramLink.chatId}`;
-  }
-  if (telegramLink.status === "waiting") {
-    return "Ждём команду /link в группе";
-  }
-  if (telegramLink.status === "expired") {
-    return "Код истёк, сгенерируйте новый";
-  }
-  if (telegramLink.status === "error") {
-    return telegramLink.error || "Ошибка привязки";
-  }
-  return "Получите код и отправьте его в группу";
-});
-
-const telegramExpiresInMinutes = computed(() => {
-  if (!telegramLink.expiresAt) return null;
-  const diff = Math.ceil((telegramLink.expiresAt - Date.now()) / 60000);
-  return diff > 0 ? diff : 0;
-});
 
 const resetForm = () => {
   form.fullName = original.fullName;
@@ -379,222 +181,15 @@ const saveProfile = async () => {
   }
 };
 
-const createUser = async () => {
-  if (!isAdmin.value) return;
-  const email = (newUser.email || "").trim().toLowerCase();
-  const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-  if(!emailPattern.test(email)){
-    ElMessage.warning("Укажите валидный email");
-    return
-  }
-  if (!email || !newUser.password) {
-    ElMessage.warning("Укажите email и пароль");
-    return;
-  }
-  sendingInvite.value = true;
-  try {
-    const payload = {
-      login: email,
-      password: newUser.password,
-      name: newUser.name || "",
-      role: newUser.role || "user",
-      avatar: null,
-    };
-    const resp = await api.registerUser(payload);
-    if (resp?.user) {
-      ElMessage.success("Пользователь создан");
-      newUser.email = "";
-      newUser.name = "";
-      newUser.password = "";
-      newUser.role = "user";
-    } else {
-      ElMessage.error("Не удалось создать пользователя");
-    }
-  } catch (error) {
-    console.log(error);
-    ElMessage.error("Ошибка при создании пользователя");
-  } finally {
-    sendingInvite.value = false;
-  }
-};
-
-const resetSettings = () => {
-  settings.bot_id = originalSettings.bot_id;
-  settings.chat_id = originalSettings.chat_id;
-  settings.admin_chat = originalSettings.admin_chat;
-};
-
-const clearTelegramTimer = () => {
-  if (telegramStatusTimer) {
-    clearInterval(telegramStatusTimer);
-    telegramStatusTimer = null;
-  }
-};
-
-const resetTelegramLink = () => {
-  clearTelegramTimer();
-  telegramLink.code = "";
-  telegramLink.status = "idle";
-  telegramLink.expiresIn = null;
-  telegramLink.expiresAt = null;
-  telegramLink.ttlMinutes = null;
-  telegramLink.chatId = "";
-  telegramLink.chatTitle = "";
-  telegramLink.error = "";
-};
-
-const startTelegramLinking = async () => {
-  if (!isAdmin.value || telegramLink.loading || loadingSettings.value) return;
-  telegramLink.loading = true;
-  telegramLink.error = "";
-  telegramLink.status = "waiting";
-  telegramLink.chatId = "";
-  telegramLink.chatTitle = "";
-  telegramLink.expiresIn = null;
-  telegramLink.expiresAt = null;
-  telegramLink.ttlMinutes = null;
-  clearTelegramTimer();
-  try {
-    const resp = await api.createTelegramLinkCode();
-    telegramLink.code = resp?.code || "";
-    telegramLink.ttlMinutes = resp?.ttl_minutes ?? null;
-    const expiresRaw = resp?.expires_at ? Date.parse(resp.expires_at) : null;
-    telegramLink.expiresAt =
-      Number.isFinite(expiresRaw) && expiresRaw > 0
-        ? expiresRaw
-        : telegramLink.ttlMinutes
-          ? Date.now() + telegramLink.ttlMinutes * 60 * 1000
-          : null;
-    telegramLink.status = "waiting";
-    if (!telegramLink.code) {
-      throw new Error("no-link-code");
-    }
-    telegramStatusTimer = setInterval(() => checkTelegramLinkStatus(true), 4000);
-    ElMessage.success("Код привязки получен. Отправьте /link в группе.");
-  } catch (error) {
-    console.log(error);
-    telegramLink.status = "error";
-    telegramLink.error = "Не удалось получить код привязки";
-    ElMessage.error(telegramLink.error);
-  } finally {
-    telegramLink.loading = false;
-  }
-};
-
-const checkTelegramLinkStatus = async (silent = false) => {
-  if (!telegramLink.code) {
-    clearTelegramTimer();
-    return;
-  }
-  if (telegramLink.expiresAt && telegramLink.expiresAt <= Date.now()) {
-    telegramLink.status = "expired";
-    clearTelegramTimer();
-    return;
-  }
-  if (!silent) {
-    telegramLink.checking = true;
-  }
-  try {
-    const resp = await api.getSettings();
-    const s = resp?.settings || resp || {};
-    const chatId = s.chat_id ? String(s.chat_id) : "";
-
-    if (chatId) {
-      telegramLink.chatId = chatId;
-      telegramLink.status = "linked";
-      settings.chat_id = chatId;
-      originalSettings.chat_id = chatId;
-      clearTelegramTimer();
-      ElMessage.success("Чат привязан, chat_id обновлён.");
-      return;
-    }
-
-    telegramLink.status = "waiting";
-  } catch (error) {
-    console.log(error);
-    telegramLink.status = "error";
-    telegramLink.error = "Не удалось проверить статус привязки";
-    clearTelegramTimer();
-  } finally {
-    telegramLink.checking = false;
-  }
-};
-
-const copyLinkCode = async () => {
-  if (!telegramLink.code) return;
-  try {
-    if (navigator?.clipboard?.writeText) {
-      await navigator.clipboard.writeText(telegramLink.code);
-    } else {
-      const input = document.createElement("input");
-      input.value = telegramLink.code;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand("copy");
-      document.body.removeChild(input);
-    }
-    ElMessage.success("Код скопирован");
-  } catch (error) {
-    console.log(error);
-    ElMessage.error("Не удалось скопировать код");
-  }
-};
-
-const loadSettings = async () => {
-  if (!isAdmin.value) return;
-  loadingSettings.value = true;
-  try {
-    const resp = await api.getSettings();
-    const s = resp?.settings || resp || {};
-    originalSettings.bot_id = s.bot_id || "";
-    originalSettings.chat_id = s.chat_id || "";
-    originalSettings.admin_chat = s.admin_chat || "";
-    resetSettings();
-  } catch (error) {
-    console.log(error);
-    ElMessage.error("Не удалось загрузить настройки");
-  } finally {
-    loadingSettings.value = false;
-  }
-};
-
-const saveSettings = async () => {
-  if (!isAdmin.value) return;
-  savingSettings.value = true;
-  try {
-    const payload = {
-      bot_id: settings.bot_id || null,
-      chat_id: settings.chat_id || null,
-      admin_chat: settings.admin_chat || null,
-    };
-    const resp = await api.updateSettings(payload);
-    const s = resp?.settings || payload;
-    originalSettings.bot_id = s.bot_id || "";
-    originalSettings.chat_id = s.chat_id || "";
-    originalSettings.admin_chat = s.admin_chat || "";
-    resetSettings();
-    ElMessage.success("Настройки сохранены");
-  } catch (error) {
-    console.log(error);
-    ElMessage.error("Не удалось сохранить настройки");
-  } finally {
-    savingSettings.value = false;
-  }
-};
-
 const goHome = () => {
   router.push("/");
 };
 
-onUnmounted(() => {
-  clearTelegramTimer();
-});
-
 onMounted(async () => {
   await loadUser();
-  await loadSettings();
 });
 </script>
+
 
 <style lang="scss" scoped>
 .profile-page {

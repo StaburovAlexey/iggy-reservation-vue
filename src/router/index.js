@@ -39,6 +39,15 @@ const routes = [
     component: () => import("../views/ProfilePage.vue"),
   },
   {
+    path: "/admin-settings",
+    name: "admin-settings",
+    meta: {
+      layout: "main",
+      auth: true,
+    },
+    component: () => import("../views/AdminSettingsPage.vue"),
+  },
+  {
     path: "/schedule",
     name: "schedule",
     meta: {
