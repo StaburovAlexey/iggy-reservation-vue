@@ -33,6 +33,9 @@
                   'is-today': isToday(data.day),
                   'is-compact': isCompactView,
                   'has-current-user': hasCurrentUser(data.day),
+                  'has-current-user--opening': isCurrentUserInGroup(data.day, 'opening'),
+                  'has-current-user--closing': isCurrentUserInGroup(data.day, 'closing'),
+                  'has-current-user--helpers': isCurrentUserInGroup(data.day, 'helpers'),
                 }" @click="handleDayClick(data.day)">
                   <div class="schedule-date__header">
                     <span class="schedule-date__day">{{
@@ -441,14 +444,19 @@ const matchesCurrentUser = (person = {}) => {
   return (userId && personId === userId) || (userName && personName === userName);
 };
 
-const hasCurrentUser = (date) => {
+const getCurrentUserGroupKeys = (date) => {
   const data = getDayData(date);
-  if (!currentUserId.value && !currentUserName.value) return false;
+  if (!currentUserId.value && !currentUserName.value) return [];
 
-  return GROUPS.some((group) =>
+  return GROUPS.filter((group) =>
     (data[group.key] || []).some((person) => matchesCurrentUser(person))
-  );
+  ).map((group) => group.key);
 };
+
+const hasCurrentUser = (date) => getCurrentUserGroupKeys(date).length > 0;
+
+const isCurrentUserInGroup = (date, groupKey) =>
+  getCurrentUserGroupKeys(date).includes(groupKey);
 
 const handleDayClick = (date) => {
   if (!isCompactView.value) return;
@@ -899,6 +907,30 @@ watch(isAdmin, (next) => {
   background: rgba(34, 197, 94, 0.12);
 
   box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.2);
+}
+
+.schedule-date.has-current-user--opening {
+  border-color: #22c55e;
+
+  background: rgba(34, 197, 94, 0.12);
+
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.25);
+}
+
+.schedule-date.has-current-user--closing {
+  border-color: #f59e0b;
+
+  background: rgba(245, 158, 11, 0.14);
+
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.25);
+}
+
+.schedule-date.has-current-user--helpers {
+  border-color: #0284c7;
+
+  background: rgba(2, 132, 199, 0.14);
+
+  box-shadow: 0 0 0 1px rgba(2, 132, 199, 0.25);
 }
 
 .schedule-date.is-compact {
