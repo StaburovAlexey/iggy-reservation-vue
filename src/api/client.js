@@ -155,6 +155,10 @@ export const api = {
     const body = payload?.date ? payload : { ...payload, date };
     return apiClient.post(`/schedule/${dateKey}`, { body });
   },
+  createMagicLink: (payload) => apiClient.post("/magic-links", { body: payload }),
+  fetchMagicLink: (token) => apiClient.get(`/magic-links/${encodeURIComponent(token)}`, { auth: false }),
+  confirmMagicLink: (token, payload) =>
+    apiClient.post(`/magic-links/${encodeURIComponent(token)}/confirm`, { body: payload, auth: false }),
   downloadBackup: async () => {
     const url = buildUrl("/backup/create");
     const headers = {};
@@ -177,8 +181,6 @@ export const api = {
     formData.append("backup", file);
     return apiClient.request("/backup/restore", { method: "POST", body: formData });
   },
-  sendInvitation: (payload) => apiClient.post("/invitations", { body: payload }),
-  confirmInvitation: (payload) => apiClient.post("/invitations/confirm", { body: payload }),
 };
 
 export { API_BASE_URL, setToken, getToken, clearToken };
