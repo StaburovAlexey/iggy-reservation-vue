@@ -46,8 +46,8 @@ jobs:
 
       - name: (Optional) Create .env from secret
         env:
-          FRONTEND_ENV_B64_PROD: ${{ secrets.FRONTEND_ENV_B64_PROD }}
-        if: ${{ env.FRONTEND_ENV_B64_PROD != '' }}
+          FRONTEND_ENV_B64: ${{ secrets.FRONTEND_ENV_B64_PROD }}
+        if: ${{ env.FRONTEND_ENV_B64 != '' }}
         run: |
           set -euxo pipefail
           echo "${{ secrets.FRONTEND_ENV_B64_PROD }}" | base64 -d > .env
