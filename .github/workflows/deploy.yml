@@ -55,6 +55,17 @@ jobs:
           echo ".env создан (первые строки):"
           head -n 5 .env | sed 's/=.*/=<hidden>/'
 
+      - name: (Optional) Create .env.production from secret
+        env:
+          FRONTEND_ENV_B64_PROD: ${{ secrets.FRONTEND_ENV_B64_PROD }}
+        if: ${{ env.FRONTEND_ENV_B64_PROD != '' }}
+        run: |
+          set -euxo pipefail
+          echo "${{ secrets.FRONTEND_ENV_B64_PROD }}" | base64 -d > .env.production
+          tr -d '\r' < .env.production > .env.production.tmp && mv .env.production.tmp .env.production
+          echo ".env.production создан (первые строки):"
+          head -n 5 .env.production | sed 's/=.*/=<hidden>/'
+
       - name: Build
         run: |
           set -euxo pipefail
