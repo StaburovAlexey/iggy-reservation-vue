@@ -367,6 +367,7 @@ setup_nginx_backend() {
   server {
       listen 80;
       server_name $DOMAIN;
+      client_max_body_size 500M;
 
 EOF
     if [ "${USE_SOCKET_IO}" = "y" ]; then
@@ -420,6 +421,7 @@ setup_nginx_frontend_static() {
 server {
     listen 80;
     server_name $DOMAIN;
+    client_max_body_size 500M;
 
     root /var/www/$DOMAIN/html;
     index index.html index.htm;
@@ -459,6 +461,7 @@ setup_nginx_backend_and_frontend() {
   server {
       listen 80;
       server_name $DOMAIN;
+      client_max_body_size 500M;
 
 EOF
     if [ "${USE_SOCKET_IO}" = "y" ]; then
