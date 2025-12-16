@@ -8,18 +8,12 @@
       <el-card v-else class="profile-card" shadow="hover">
         <div class="profile-card__header">
           <div>
-            <h2 class="profile-card__title">Профиль <el-button style="float: right;" @click="goHome">На главную</el-button></h2>
-            <p class="profile-card__subtitle">Обновите имя, e-mail или пароль.</p>
+            <h2 class="profile-card__title">Профиль</h2>
+            <p class="profile-card__subtitle">Обновите имя, e-mail и аватар.</p>
           </div>
-          
         </div>
-        <el-form
-          :model="form"
-          label-position="top"
-          class="profile-form"
-          autocomplete="off"
-          @submit.prevent
-        >
+
+        <el-form :model="form" label-position="top" class="profile-form" autocomplete="off" @submit.prevent>
           <el-form-item label="Имя">
             <el-input v-model="form.fullName" autocomplete="off" placeholder="Как вас зовут?" />
           </el-form-item>
@@ -49,71 +43,38 @@
               autocomplete="new-password"
               type="password"
               show-password
-              placeholder="Оставьте пустым, если не нужно менять"
+              placeholder="Оставьте пустым, если менять не нужно"
             />
           </el-form-item>
           <div class="profile-form__actions">
-            
             <el-button @click="resetForm" :disabled="saving || loadingProfile">Сбросить</el-button>
-            <el-button
-              type="primary"
-              :disabled="!canSave"
-              :loading="saving"
-              @click="saveProfile"
-            >
+            <el-button type="primary" :disabled="!canSave" :loading="saving" @click="saveProfile">
               Сохранить
             </el-button>
           </div>
         </el-form>
-        <el-card v-if="canInvite" class="invite-card" shadow="never">
-          <div class="invite-card__header">
-            <div>
-              <h3 class="invite-card__title">Добавить пользователя</h3>
-              <p class="invite-card__subtitle">
-                Отправьте приглашение по электронной почте новому пользователю.
-              </p>
-            </div>
-          </div>
-          <div class="invite-card__form">
-            <el-input
-              v-model="inviteEmail"
-              type="email"
-              placeholder="email получателя"
-              :disabled="sendingInvite"
-            />
-            <el-button
-              type="primary"
-              :loading="sendingInvite"
-              :disabled="sendingInvite"
-              @click="sendInvite"
-            >
-              Отправить
-            </el-button>
-          </div>
-        </el-card>
-
       </el-card>
     </div>
   </div>
 </template>
 
+
 <script setup>
 import { computed, onMounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
-import { useStore } from "vuex";
 import { ElMessage } from "element-plus";
 import NavBar from "@/components/NavBar.vue";
 import PreloaderApp from "@/components/PreloaderApp.vue";
-import { supabase } from "@/lib/supabaseClient";
+import { api } from "@/api/client";
+import { useAuthStore } from "@/store/auth";
 
-const store = useStore();
+const authStore = useAuthStore();
 const router = useRouter();
 
 const loadingProfile = ref(true);
 const saving = ref(false);
 const avatarFile = ref(null);
-const inviteEmail = ref("");
-const sendingInvite = ref(false);
+
 const form = reactive({
   fullName: "",
   email: "",
@@ -125,9 +86,6 @@ const original = reactive({
   email: "",
   avatarUrl: "",
 });
-
-const adminEmails = ["gilbertfrost@yandex,ru", "gilbertfrost@yandex.ru"];
-const canInvite = computed(() => adminEmails.includes((store.getters.user?.email || "").toLowerCase()));
 
 const canSave = computed(
   () =>
@@ -148,48 +106,31 @@ const resetForm = () => {
   avatarFile.value = null;
 };
 
-const sendInvite = async () => {
-  if (!canInvite.value) return;
-  if (!inviteEmail.value) {
-    ElMessage.warning("Укажите email получателя");
-    return;
-  }
-  sendingInvite.value = true;
-  try {
-    const { error } = await supabase.auth.signInWithOtp({
-      email: inviteEmail.value,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: `https://alexey-staburov.ru/#/magic-link`,
-      },
-    });
-    if (error) throw error;
-    ElMessage.success("Инвайт отправлен");
-    inviteEmail.value = "";
-  } catch (error) {
-    console.log(error);
-    ElMessage.error("Не удалось отправить инвайт");
-  } finally {
-    sendingInvite.value = false;
-  }
+const handleAvatarChange = (file) => {
+  avatarFile.value = file.raw;
 };
+
+const initials = computed(() => (form.fullName ? form.fullName.slice(0, 1).toUpperCase() : "U"));
+
+const avatarPreview = computed(() =>
+  avatarFile.value ? URL.createObjectURL(avatarFile.value) : form.avatarUrl || ""
+);
 
 const loadUser = async () => {
   loadingProfile.value = true;
   try {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data?.user) {
-      throw error || new Error("Пользователь не найден");
+    const currentUser = authStore.user;
+    if (!currentUser || (!currentUser.email && !currentUser.login)) {
+      throw new Error("Требуется авторизация");
     }
-    const currentUser = data.user;
-    original.fullName = currentUser.user_metadata?.full_name || "";
-    original.email = currentUser.email || "";
-    original.avatarUrl = currentUser.user_metadata?.avatar_url || "";
+    original.fullName = currentUser.user_metadata?.full_name || currentUser.name || "";
+    original.email = currentUser.email || currentUser.login || "";
+    original.avatarUrl = currentUser.user_metadata?.avatar_url || currentUser.avatar || "";
     resetForm();
-    store.commit("setUser", currentUser);
+    authStore.setUser(currentUser);
   } catch (error) {
     console.log(error);
-    ElMessage.error("Не удалось загрузить профиль");
+    ElMessage.error("Произошла ошибка загрузки профиля");
     router.push("/login");
   } finally {
     loadingProfile.value = false;
@@ -201,68 +142,47 @@ const saveProfile = async () => {
   saving.value = true;
   try {
     const payload = {};
-    const meta = {};
-    // upload avatar if selected
     if (avatarFile.value) {
-      const ext = avatarFile.value.name?.split(".").pop() || "png";
-      const fileName = `avatar-${Date.now()}.${ext}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(fileName, avatarFile.value);
-      if (uploadError) throw uploadError;
-      const { data: publicUrl } = supabase.storage.from("avatars").getPublicUrl(uploadData.path);
-      meta.avatar_url = publicUrl.publicUrl;
-      form.avatarUrl = meta.avatar_url;
+      const uploadResponse = await api.uploadFile(avatarFile.value);
+      if (uploadResponse?.url) {
+        form.avatarUrl = uploadResponse.url;
+      }
     }
     if (form.fullName !== original.fullName) {
-      meta.full_name = form.fullName;
-    }
-    if (Object.keys(meta).length) {
-      payload.data = meta;
+      payload.name = form.fullName;
     }
     if (form.email && form.email !== original.email) {
-      payload.email = form.email;
+      payload.login = form.email;
     }
     if (form.password) {
       payload.password = form.password;
     }
+    if (form.avatarUrl) {
+      payload.avatar = form.avatarUrl;
+    }
 
-    const { data, error } = await supabase.auth.updateUser(payload);
-    if (error) throw error;
-    const updatedUser = data.user;
+    const response = await api.updateProfile(payload);
+    const updatedUser = response?.user || {};
 
-    original.fullName = updatedUser.user_metadata?.full_name || "";
-    original.email = updatedUser.email || "";
-    original.avatarUrl = updatedUser.user_metadata?.avatar_url || "";
+    original.fullName = updatedUser.user_metadata?.full_name || updatedUser.name || "";
+    original.email = updatedUser.email || updatedUser.login || "";
+    original.avatarUrl = updatedUser.user_metadata?.avatar_url || updatedUser.avatar || "";
     resetForm();
-    store.commit("setUser", updatedUser);
-    ElMessage.success("Профиль обновлен");
+    authStore.setUser(updatedUser);
+    ElMessage.success("Профиль обновлён");
   } catch (error) {
     console.log(error);
-    ElMessage.error("Не удалось сохранить профиль");
+    ElMessage.error("Произошла ошибка сохранения профиля");
   } finally {
     saving.value = false;
   }
 };
 
-const goHome = () => {
-  router.push("/");
-};
-
-onMounted(loadUser);
-
-const handleAvatarChange = (file) => {
-  avatarFile.value = file.raw;
-};
-
-const initials = computed(() =>
-  form.fullName ? form.fullName.slice(0, 1).toUpperCase() : "U"
-);
-
-const avatarPreview = computed(() =>
-  avatarFile.value ? URL.createObjectURL(avatarFile.value) : form.avatarUrl || ""
-);
+onMounted(async () => {
+  await loadUser();
+});
 </script>
+
 
 <style lang="scss" scoped>
 .profile-page {
@@ -274,8 +194,8 @@ const avatarPreview = computed(() =>
 
 .profile-page__body {
   max-width: 720px;
-  margin: 32px auto;
-  padding: 0 16px 48px;
+  margin: 0 auto;
+  padding: 20px 16px;
 }
 
 .profile-card {
@@ -309,38 +229,67 @@ const avatarPreview = computed(() =>
   justify-content: flex-end;
   gap: 8px;
   margin-top: 4px;
+  flex-wrap: wrap;
+}
+.profile-form__actions .el-button {
+  flex: 1 1 200px;
+  margin-left: 0;
+}
+.profile-form__actions .el-button + .el-button {
+  margin-left: 0;
 }
 
-.invite-card {
+.schema-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 12px 0;
+}
+
+.invite-card,
+.settings-card {
   margin-top: 16px;
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
 }
 
-.invite-card__header {
+.invite-card__header,
+.settings-card__header {
   margin-bottom: 8px;
 }
 
-.invite-card__title {
+.invite-card__title,
+.settings-card__title {
   margin: 0;
+  color: var(--text-primary);
 }
 
-.invite-card__subtitle {
+.invite-card__subtitle,
+.settings-card__subtitle {
   margin: 4px 0 0;
   color: var(--text-secondary);
   font-size: 13px;
 }
 
 .invite-card__form {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 8px;
   align-items: center;
-  flex-wrap: wrap;
 }
 
-.invite-card__form :deep(.el-input) {
-  flex: 1;
-  min-width: 200px;
+.settings-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.settings-form__actions .el-button {
+  flex: 1 1 200px;
+  margin-left: 0;
+}
+.settings-form__actions .el-button + .el-button {
+  margin-left: 0;
 }
 
 .profile-loader {
@@ -364,5 +313,92 @@ const avatarPreview = computed(() =>
 .avatar-upload__hint {
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+.telegram-link {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-surface);
+}
+
+.telegram-link__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.telegram-link__title {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.telegram-link__subtitle {
+  margin: 4px 0 0;
+  color: var(--text-primary);
+  opacity: 0.9;
+}
+
+.telegram-link__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.telegram-link__code-block {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.telegram-link__code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 12px;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.telegram-link__hint {
+  background: var(--bg-surface-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  opacity: 0.92;
+}
+
+.telegram-link__hint p {
+  margin: 4px 0;
+}
+
+.telegram-link__status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.telegram-link__status-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.telegram-link__expires,
+.telegram-link__chat,
+.telegram-link__placeholder {
+  margin: 0;
+  color: var(--text-primary);
+  opacity: 0.9;
 }
 </style>

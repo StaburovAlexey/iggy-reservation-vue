@@ -1,7 +1,7 @@
 import { createApp } from "vue";
 import App from "./App.vue";
 import router from "./router";
-import store from "./store";
+import pinia from "./store";
 import "normalize.css";
 import ElementPlus from "element-plus";
 import "element-plus/dist/index.css";
@@ -12,9 +12,7 @@ import "dayjs/locale/ru";
 dayjs.locale("ru");
 export const tg = window.Telegram.WebApp;
 createApp(App)
-  .use(store)
+  .use(pinia)
   .use(router)
-  .use(ElementPlus, {
-    locale: ru,
-  })
+  .use(ElementPlus, { locale: ru })
   .mount("#app");

@@ -1,14 +1,18 @@
 <template>
   <header class="navbar">
-    <div class="navbar__brand" @click="refresh">
-      <div class="logo" />
-      <span class="navbar__title">IGGY Reservation</span>
+    <div class="navbar__left">
+      <div class="navbar__brand" @click="refresh">
+        <div class="logo" />
+        <span class="navbar__title">IGGY Reservation</span>
+      </div>
     </div>
     <el-dropdown trigger="click">
       <div class="navbar__menu-btn">
         <el-avatar :size="36" :src="avatarUrl" class="navbar__avatar">{{ avatarFallback }}</el-avatar>
         <span class="navbar__name">{{ userName }}</span>
-        <el-icon><ArrowDown /></el-icon>
+        <el-icon>
+          <ArrowDown />
+        </el-icon>
       </div>
       <template #dropdown>
         <el-dropdown-menu class="navbar__dropdown">
@@ -19,11 +23,41 @@
               <div class="navbar__user-mail">{{ userEmail }}</div>
             </div>
           </el-dropdown-item>
-          <el-dropdown-item divided @click="editProfile">
-            Редактировать профиль
+          <el-dropdown-item
+            @click="goHome"
+            :style="isActiveRoute('/') ? activeDropdownStyle : {}"
+          >
+            На главную
+          </el-dropdown-item>
+          <el-dropdown-item
+            divided
+            @click="editProfile"
+            :style="isActiveRoute('/profile') ? activeDropdownStyle : {}"
+          >
+            Профиль
+          </el-dropdown-item>
+          <el-dropdown-item
+            @click="goSchedule"
+            :style="isActiveRoute('/schedule') ? activeDropdownStyle : {}"
+          >
+            Расписание
+          </el-dropdown-item>
+          <el-dropdown-item
+            v-if="isAdmin"
+            @click="editSchema"
+            :style="isActiveRoute('/edit-shema') ? activeDropdownStyle : {}"
+          >
+            Редактировать плана-схему
+          </el-dropdown-item>
+          <el-dropdown-item
+            v-if="isAdmin"
+            @click="goAdminSettings"
+            :style="isActiveRoute('/admin-settings') ? activeDropdownStyle : {}"
+          >
+            Настройки
           </el-dropdown-item>
           <el-dropdown-item @click="toggleTheme">
-            Сменить тему: {{ nextThemeLabel }}
+            Тема: {{ nextThemeLabel }}
           </el-dropdown-item>
           <el-dropdown-item divided @click="logout">
             Выйти из аккаунта
@@ -35,26 +69,55 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from "vue";
-import { useRouter } from "vue-router";
-import { useStore } from "vuex";
+import { computed, ref, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { ArrowDown } from "@element-plus/icons-vue";
-import { supabase } from "@/lib/supabaseClient";
+import { storeToRefs } from "pinia";
+import { useDataStore } from "@/store/dataBase";
+import { useAuthStore } from "@/store/auth";
 
-const store = useStore();
+defineEmits(["open-room"]);
+
+const dataStore = useDataStore();
+const authStore = useAuthStore();
+const { reservation } = storeToRefs(dataStore);
+const { user } = storeToRefs(authStore);
+
+const reservations = computed(() => reservation.value || []);
+const isRoomReserved = computed(() => reservations.value.some((item) => item.table === "12"));
+const isAdmin = computed(() => (user.value?.role || user.value?.user_metadata?.role) === "admin");
+
 const router = useRouter();
+const route = useRoute();
 const THEME_KEY = "iggy-theme";
 const theme = ref(localStorage.getItem(THEME_KEY) || "dark");
+const currentPath = computed(() => route.path);
+const activeDropdownStyle = {
+  backgroundColor: "rgba(255, 255, 255, 0.08)",
+  color: "black",
+  fontWeight: 600,
+};
 
-const user = computed(() => store.getters.user || {});
+const normalizePath = (value) =>
+  value.endsWith("/") && value.length > 1 ? value.slice(0, -1) : value;
+
+const isActiveRoute = (path) => {
+  const target = normalizePath(path);
+  const current = normalizePath(currentPath.value);
+  return current === target || current.startsWith(`${target}/`);
+};
+
 const userName = computed(
-  () => user.value.user_metadata?.full_name || user.value.email || "Пользователь"
+  () =>
+    user.value?.user_metadata?.full_name ||
+    user.value?.name ||
+    user.value?.login ||
+    user.value?.email ||
+    "Пользователь"
 );
-const userEmail = computed(() => user.value.email || "Нет e-mail");
-const avatarUrl = computed(() => user.value.user_metadata?.avatar_url || "");
-const avatarFallback = computed(() =>
-  userName.value ? userName.value.slice(0, 1).toUpperCase() : "U"
-);
+const userEmail = computed(() => user.value?.email || user.value?.login || "Нет e-mail");
+const avatarUrl = computed(() => user.value?.avatar || user.value?.user_metadata?.avatar_url || "");
+const avatarFallback = computed(() => (userName.value ? userName.value.slice(0, 1).toUpperCase() : "U"));
 
 const applyTheme = (value) => {
   const root = document.documentElement;
@@ -70,13 +133,14 @@ watch(
   { immediate: true }
 );
 
-const nextThemeLabel = computed(() =>
-  theme.value === "light" ? "Светлая тема" : "Темная тема"
-);
+const nextThemeLabel = computed(() => (theme.value === "light" ? "Тёмная" : "Светлая"));
 
 const refresh = () => {
-  store.dispatch("fetchInfo").catch((error) => console.log(error));
+  dataStore.fetchInfo().catch((error) => console.log(error));
 };
+
+const goHome = () => router.push("/");
+const goSchedule = () => router.push("/schedule");
 
 const toggleTheme = () => {
   theme.value = theme.value === "light" ? "dark" : "light";
@@ -86,23 +150,23 @@ const editProfile = () => {
   router.push("/profile");
 };
 
+const editSchema = () => {
+  router.push("/edit-shema");
+};
+
+const goAdminSettings = () => {
+  router.push("/admin-settings");
+};
+
 const logout = async () => {
   try {
-    await supabase.auth.signOut();
-    store.commit("clearUser");
+    authStore.logout();
   } catch (error) {
     console.log(error);
   } finally {
     router.push("/login");
   }
 };
-
-onMounted(async () => {
-  const { data, error } = await supabase.auth.getUser();
-  if (!error && data?.user) {
-    store.commit("setUser", data.user);
-  }
-});
 </script>
 
 <style lang="scss" scoped>
@@ -114,6 +178,12 @@ onMounted(async () => {
   color: var(--text-primary);
   padding: 6px 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.navbar__left {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .navbar__brand {

@@ -10,6 +10,7 @@
         value-format="DD.MM.YY"
         :clearable="false"
         :editable="false"
+        :first-day-of-week="1"
         style="width: 150px;"
         @change="handleDateChange"
       />
@@ -19,9 +20,9 @@
 
 <script setup>
 import { onMounted, ref } from "vue";
-import { useStore } from "vuex";
+import { useDataStore } from "@/store/dataBase";
 
-const store = useStore();
+const dataStore = useDataStore();
 const date = ref("");
 
 const formatDate = (value) => {
@@ -32,8 +33,8 @@ const formatDate = (value) => {
 const handleDateChange = async (value) => {
   if (!value) return;
   try {
-    store.commit("setDate", value);
-    await store.dispatch("fetchInfo");
+    dataStore.setDate(value);
+    await dataStore.fetchInfo();
   } catch (error) {
     console.log(error);
   }
@@ -42,8 +43,8 @@ const handleDateChange = async (value) => {
 onMounted(() => {
   const today = formatDate(new Date());
   date.value = today;
-  store.commit("setDate", today);
-  store.dispatch("fetchInfo").catch((error) => console.log(error));
+  dataStore.setDate(today);
+  dataStore.fetchInfo().catch((error) => console.log(error));
 });
 </script>
 

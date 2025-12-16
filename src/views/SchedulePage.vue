@@ -1,0 +1,1215 @@
+<template>
+  <div class="schedule-page">
+    <NavBar />
+
+    <div class="schedule-page__body">
+      <div class="schedule-grid" :class="{ 'schedule-grid--full': !isAdmin }">
+        <el-card class="schedule-grid__calendar" shadow="hover" v-loading="loading">
+          <div class="schedule-card__header">
+            <div>
+              <h2 class="schedule-card__title">Расписание смен</h2>
+            </div>
+
+            <div class="schedule-card__controls">
+              <el-date-picker v-model="visibleMonth" type="month" format="MMMM YYYY" value-format="YYYY-MM"
+                :clearable="false" :editable="false" placeholder="Месяц" @change="handleMonthPickerChange" />
+
+              <div class="schedule-card__buttons">
+                <el-button size="small" @click="shiftMonth(-1)">Предыдущий</el-button>
+
+                <el-button size="small" @click="goToday">Текущий</el-button>
+
+                <el-button size="small" @click="shiftMonth(1)">Следующий</el-button>
+
+                <!-- <el-button size="small" :icon="Refresh" :loading="loading" circle @click="refreshSchedule" /> -->
+              </div>
+            </div>
+          </div>
+
+                                                            <div class="schedule-card__legend">
+            <div class="schedule-card__legend-item schedule-card__legend-item--opening">
+              <span>Открытие — зелёный</span>
+            </div>
+            <div class="schedule-card__legend-item schedule-card__legend-item--closing">
+              <span>Закрытие — оранжевый</span>
+            </div>
+            <div class="schedule-card__legend-item schedule-card__legend-item--helpers">
+              <span>Помощь — синий</span>
+            </div>
+          </div>
+
+          <div class="schedule-card__scroll">
+            <el-calendar v-model="calendarValue" :range="calendarRange" @panel-change="handlePanelChange">
+              <template #date-cell="{ data }">
+                <div class="schedule-date" :class="{
+                  'is-today': isToday(data.day),
+                  'is-compact': isCompactView,
+                  'has-current-user': hasCurrentUser(data.day),
+                  'has-current-user--opening': isCurrentUserInGroup(data.day, 'opening'),
+                  'has-current-user--closing': isCurrentUserInGroup(data.day, 'closing'),
+                  'has-current-user--helpers': isCurrentUserInGroup(data.day, 'helpers'),
+                }" @click="handleDayClick(data.day)">
+                  <div class="schedule-date__header">
+                    <span class="schedule-date__day">{{
+                      dayNumber(data.day)
+                    }}</span>
+
+                    <el-tag v-if="hasAssignments(data.day) || isCompactView" size="small" effect="plain" type="info"
+                      round>
+                      {{ totalAssignments(data.day) }}
+                    </el-tag>
+                  </div>
+
+                  <div v-if="!isCompactView" class="schedule-date__groups">
+                    <div v-for="group in previewGroups(data.day)" :key="group.key" class="schedule-date__group"
+                      @dragover.prevent @drop="handleGroupDrop(data.day, group.key)">
+                      <div class="schedule-date__group-name">
+                        {{ group.label }}
+                      </div>
+
+                      <div class="schedule-date__people">
+                        <el-tag v-for="person in group.people.slice(0, 2)" :key="person.id" :type="group.tag"
+                          size="small" round :closable="isAdmin" @close.stop="
+                            removePersonFromDate(data.day, group.key, person.id)
+                            ">
+                          <div class="schedule-date__person">
+                            <el-avatar size="small" :src="person.avatar" class="schedule-date__person-avatar">
+                              {{
+                                person.name
+                                  ? person.name.charAt(0).toUpperCase()
+                                  : ""
+                              }}
+                            </el-avatar>
+
+                            <span class="schedule-date__person-name">{{
+                              person.name
+                            }}</span>
+                          </div>
+                        </el-tag>
+
+                        <span v-if="group.people.length > 2" class="schedule-date__more">
+                          +{{ group.people.length - 2 }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </el-calendar>
+
+            <el-dialog v-model="detailDialogVisible" :title="selectedDateTitle" width="80%" append-to-body
+              @closed="selectedDate = null">
+              <div class="schedule-dialog" v-if="selectedDate">
+                <div class="schedule-dialog__groups">
+                  <div v-for="group in selectedDayGroups" :key="group.key"
+                    class="schedule-date__group schedule-date__group--dialog">
+                    <div class="schedule-date__group-name">{{ group.label }}</div>
+
+                    <div class="schedule-date__people schedule-date__people--dialog" v-if="group.people.length">
+                      <el-tag v-for="person in group.people" :key="person.id" :type="group.tag" size="small" round
+                        :closable="isAdmin" @close.stop="removePersonFromDate(selectedDate, group.key, person.id)">
+                        <div class="schedule-date__person">
+                          <el-avatar size="small" :src="person.avatar" class="schedule-date__person-avatar">
+                            {{ person.name ? person.name.charAt(0).toUpperCase() : "" }}
+                          </el-avatar>
+                          <span class="schedule-date__person-name">{{ person.name }}</span>
+                        </div>
+                      </el-tag>
+                    </div>
+
+                    <div v-else class="schedule-dialog__empty">Нет записей</div>
+                  </div>
+                </div>
+              </div>
+            </el-dialog>
+          </div>
+        </el-card>
+
+        <el-card v-if="isAdmin" class="schedule-grid__employees" shadow="hover">
+          <div class="employee-header">
+            <h3>Сотрудники</h3>
+
+            <p class="employee-hint">
+              Перетащите сотрудника на нужную группу внутри дня.
+            </p>
+          </div>
+
+          <div class="employee-list">
+            <el-tag v-for="emp in employees" :key="emp.id" class="employee-pill" effect="plain" type="info"
+              :draggable="true" @dragstart="handleDragStart($event, emp)" @dragend="handleDragEnd">
+              <div class="employee-pill__content">
+                <el-avatar size="small" :src="emp.avatar" class="employee-pill__avatar">
+                  {{ emp.name ? emp.name.charAt(0).toUpperCase() : "" }}
+                </el-avatar>
+
+                <span class="employee-pill__name">{{ emp.name }}</span>
+              </div>
+            </el-tag>
+          </div>
+        </el-card>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+
+import dayjs from "dayjs";
+
+import { ElMessage } from "element-plus";
+
+import { Refresh } from "@element-plus/icons-vue";
+
+import NavBar from "@/components/NavBar.vue";
+
+import { api } from "@/api/client";
+
+import { useAuthStore } from "@/store/auth";
+
+const GROUPS = [
+  { key: "opening", label: "Открытие", tag: "success" },
+
+  { key: "closing", label: "Закрытие", tag: "warning" },
+
+  { key: "helpers", label: "Помощь", tag: "info", hint: "Для подмоги" },
+];
+
+const authStore = useAuthStore();
+
+const isAdmin = computed(
+  () =>
+    authStore.user?.role === "admin" ||
+    authStore.user?.user_metadata?.role === "admin"
+);
+
+const currentUserId = computed(() => {
+  const user = authStore.user || {};
+  return user.uuid
+
+});
+
+const currentUserName = computed(() => {
+  const user = authStore.user || {};
+  return (user.name || user.login || "").trim();
+});
+
+const currentMonth = ref(dayjs().startOf("month"));
+
+const calendarValue = ref(currentMonth.value.toDate());
+
+const visibleMonth = ref(currentMonth.value.format("YYYY-MM"));
+
+const calendarRange = computed(() => {
+  const start = currentMonth.value.startOf("month").startOf("week").toDate();
+
+  const end = currentMonth.value.endOf("month").endOf("week").toDate();
+
+  return [start, end];
+});
+
+const loading = ref(false);
+
+const employees = ref([]);
+
+const employeesLoading = ref(false);
+
+const draggingEmployee = ref(null);
+
+const scheduleMap = ref({});
+
+const isCompactView = ref(false);
+
+const detailDialogVisible = ref(false);
+
+const selectedDate = ref(null);
+
+const selectedDateTitle = computed(() =>
+  selectedDate.value ? dayjs(selectedDate.value).format("DD MMMM YYYY") : ""
+);
+
+const selectedDayGroups = computed(() =>
+  selectedDate.value ? previewGroups(selectedDate.value) : []
+);
+
+const updateCompactFlag = () => {
+  if (typeof window === "undefined") return;
+
+  isCompactView.value = window.innerWidth < 900;
+};
+
+if (typeof window !== "undefined") {
+  isCompactView.value = window.innerWidth < 900;
+}
+
+const getEmployeeAvatarById = (id) => {
+  if (!id) return "";
+
+  const found = (employees.value || []).find((emp) => emp?.uuid === id);
+
+  return found?.avatar || "";
+};
+
+const unwrapUser = (value) => (value && value.user ? value.user : value);
+
+// Expect a flat user object: { uuid, name, login, avatar }
+const resolveAvatar = (raw) => {
+  const item = unwrapUser(raw);
+  if (!item || typeof item === "string") return "";
+  return item.avatar || "";
+};
+
+const normalizePeople = (list = [], groupKey = "") => {
+  if (!Array.isArray(list)) return [];
+
+  return list
+
+    .map((raw, index) => {
+      const item = unwrapUser(raw);
+
+      if (!item) return null;
+
+      const name =
+        item.name || item.login || (typeof item === "string" ? item : "");
+
+      const cleaned = String(name || "").trim();
+
+      if (!cleaned) return null;
+
+      const id =
+        item.uuid ||
+        item.id ||
+        item.user_id ||
+        item.login ||
+        `${groupKey}-${index}-${cleaned}`;
+
+      const avatar = resolveAvatar(item) || getEmployeeAvatarById(id);
+
+      return { id, name: cleaned, avatar };
+    })
+
+    .filter(Boolean);
+};
+
+const normalizeEmployee = (raw) => {
+  const item = unwrapUser(raw);
+
+  if (!item) return null;
+
+  const name =
+    item.name || item.login || (typeof item === "string" ? item : "");
+
+  const cleaned = String(name || "").trim();
+
+  if (!cleaned) return null;
+
+  const id = item.uuid || item.id || item.user_id || item.login || cleaned;
+
+  return { id, name: cleaned, avatar: resolveAvatar(item) };
+};
+
+const emptyDay = () => ({
+  opening: [],
+
+  closing: [],
+
+  helpers: [],
+});
+
+const formatDateKey = (value) => dayjs(value).format("YYYY-MM-DD");
+
+const applySchedule = (payload) => {
+  const raw = payload?.items || payload?.schedule || payload || [];
+
+  const next = {};
+
+  (Array.isArray(raw) ? raw : []).forEach((item) => {
+    const dateValue =
+      item?.date || item?.day || item?.date_key || item?.dateKey;
+
+    if (!dateValue) return;
+
+    const key = formatDateKey(dateValue);
+
+    next[key] = {
+      opening: normalizePeople(
+        item.opening || item.open || item.morning,
+        "opening"
+      ),
+
+      closing: normalizePeople(
+        item.closing || item.close || item.evening,
+        "closing"
+      ),
+
+      helpers: normalizePeople(
+        item.helpers || item.support || item.extra || item.other || item.others,
+
+        "helpers"
+      ),
+    };
+  });
+
+  scheduleMap.value = next;
+};
+
+const loadEmployees = async () => {
+  if (!isAdmin.value) {
+    employees.value = [];
+    return;
+  }
+
+  employeesLoading.value = true;
+
+  try {
+    const resp = await api.getEmployees();
+
+    const list = resp?.items || resp?.users || resp || [];
+
+    employees.value = (Array.isArray(list) ? list : [])
+      .map(normalizeEmployee)
+      .filter(Boolean);
+  } catch (error) {
+    console.log(error);
+
+    ElMessage.error("Не удалось загрузить список сотрудников");
+  } finally {
+    employeesLoading.value = false;
+  }
+};
+
+const fetchSchedule = async () => {
+  loading.value = true;
+
+  try {
+    const month = currentMonth.value.format("YYYY-MM");
+
+    const resp = await api.getSchedule({ month });
+
+    applySchedule(resp);
+  } catch (error) {
+    console.log(error);
+
+    ElMessage.error("Не удалось загрузить расписание");
+  } finally {
+    loading.value = false;
+  }
+};
+
+const updateMonth = (value, { syncValue = false } = {}) => {
+  const next = dayjs(value || new Date()).startOf("month");
+
+  if (!next.isValid()) return;
+
+  const changed = !next.isSame(currentMonth.value, "month");
+
+  currentMonth.value = next;
+
+  visibleMonth.value = next.format("YYYY-MM");
+
+  if (syncValue) {
+    calendarValue.value = next.toDate();
+  }
+
+  if (changed) {
+    fetchSchedule();
+  }
+};
+
+const handlePanelChange = (value) => updateMonth(value);
+
+const handleMonthPickerChange = (value) => {
+  if (!value) return;
+
+  const picked = dayjs(value, "YYYY-MM");
+
+  updateMonth(picked, { syncValue: true });
+};
+
+const goToday = () => updateMonth(dayjs(), { syncValue: true });
+
+const shiftMonth = (delta) =>
+  updateMonth(currentMonth.value.add(delta, "month"), { syncValue: true });
+
+const refreshSchedule = () => fetchSchedule();
+
+watch(calendarValue, (value) => {
+  if (!value) return;
+
+  updateMonth(value);
+});
+
+const getDayData = (date) => {
+  const key = formatDateKey(date);
+
+  return scheduleMap.value[key] || emptyDay();
+};
+
+const matchesCurrentUser = (person = {}) => {
+  const userId = String(currentUserId.value || "").toLowerCase();
+  const userName = String(currentUserName.value || "").toLowerCase();
+  if (!userId && !userName) return false;
+
+  const personId = String(person.id || "").toLowerCase();
+  const personName = String(person.name || "").toLowerCase();
+
+  return (userId && personId === userId) || (userName && personName === userName);
+};
+
+const getCurrentUserGroupKeys = (date) => {
+  const data = getDayData(date);
+  if (!currentUserId.value && !currentUserName.value) return [];
+
+  return GROUPS.filter((group) =>
+    (data[group.key] || []).some((person) => matchesCurrentUser(person))
+  ).map((group) => group.key);
+};
+
+const hasCurrentUser = (date) => getCurrentUserGroupKeys(date).length > 0;
+
+const isCurrentUserInGroup = (date, groupKey) =>
+  getCurrentUserGroupKeys(date).includes(groupKey);
+
+const handleDayClick = (date) => {
+  if (!isCompactView.value) return;
+  selectedDate.value = date;
+  detailDialogVisible.value = true;
+};
+
+const serializeGroupForSave = (list = []) =>
+  (list || [])
+
+    .map((raw) => {
+      const item = unwrapUser(raw);
+
+      if (!item) return null;
+
+      const uuid = item.uuid || item.id || item.user_id || item.login || null;
+
+      if (!uuid) return null;
+
+      return { uuid };
+    })
+
+    .filter(Boolean);
+
+const saveDayData = async (dateKey) => {
+  const entry = scheduleMap.value[dateKey] || emptyDay();
+
+  const payload = {
+    date: dateKey,
+
+    opening: serializeGroupForSave(entry.opening),
+
+    closing: serializeGroupForSave(entry.closing),
+
+    helpers: serializeGroupForSave(entry.helpers),
+  };
+
+  try {
+    await api.saveScheduleForDate(dateKey, payload);
+
+    ElMessage.success("Расписание обновлено");
+  } catch (error) {
+    console.log(error);
+
+    ElMessage.error("Не удалось сохранить расписание");
+  }
+};
+
+const ensureDayEntry = (key) => {
+  if (!scheduleMap.value[key]) {
+    scheduleMap.value = { ...scheduleMap.value, [key]: emptyDay() };
+  }
+
+  return scheduleMap.value[key];
+};
+
+const normalizeDroppedEmployee = (rawEmployee) => {
+  const employee = unwrapUser(rawEmployee);
+
+  if (!employee) return null;
+
+  const name = employee.name || employee.login || "";
+
+  const cleaned = String(name || "").trim();
+
+  if (!cleaned) return null;
+
+  const id =
+    employee.uuid ||
+    employee.id ||
+    employee.user_id ||
+    employee.login ||
+    cleaned;
+
+  const avatar =
+    employee.avatar || resolveAvatar(employee) || getEmployeeAvatarById(id);
+
+  return { id, name: cleaned, avatar };
+};
+
+const addEmployeeToDate = (dateKey, groupKey, employee) => {
+  const normalized = normalizeDroppedEmployee(employee);
+
+  if (!normalized) return false;
+
+  const dayEntry = ensureDayEntry(dateKey);
+
+  const list = dayEntry[groupKey] || [];
+
+  const exists = list.some(
+    (item) => item.id === normalized.id || item.name === normalized.name
+  );
+
+  if (exists) return false;
+
+  const updatedGroup = [...list, normalized];
+
+  const updatedEntry = { ...dayEntry, [groupKey]: updatedGroup };
+
+  scheduleMap.value = { ...scheduleMap.value, [dateKey]: updatedEntry };
+
+  return true;
+};
+
+const removePersonFromDate = async (date, groupKey, personId) => {
+  if (!isAdmin.value) return;
+
+  const dateKey = formatDateKey(date);
+
+  const dayEntry = scheduleMap.value[dateKey];
+
+  if (!dayEntry) return;
+
+  const updatedGroup = (dayEntry[groupKey] || []).filter(
+    (person) => person.id !== personId
+  );
+
+  const updatedEntry = { ...dayEntry, [groupKey]: updatedGroup };
+
+  scheduleMap.value = { ...scheduleMap.value, [dateKey]: updatedEntry };
+
+  await saveDayData(dateKey);
+};
+
+const handleDragStart = (event, employee) => {
+  draggingEmployee.value = employee;
+
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = "copy";
+
+    event.dataTransfer.setData(
+      "text/plain",
+      employee.id || employee.name || ""
+    );
+  }
+};
+
+const handleDragEnd = () => {
+  draggingEmployee.value = null;
+};
+
+const handleGroupDrop = async (date, groupKey) => {
+  if (!isAdmin.value) {
+    ElMessage.warning("Редактировать расписание может только админ");
+
+    return;
+  }
+
+  if (!draggingEmployee.value) return;
+
+  const dateKey = formatDateKey(date);
+
+  const added = addEmployeeToDate(dateKey, groupKey, draggingEmployee.value);
+
+  draggingEmployee.value = null;
+
+  if (added) {
+    await saveDayData(dateKey);
+  } else {
+    ElMessage.info("Сотрудник уже присутствует в этой группе");
+  }
+};
+
+const hasAssignments = (date) => {
+  const data = getDayData(date);
+
+  return GROUPS.some((group) => (data[group.key] || []).length);
+};
+
+const totalAssignments = (date) => {
+  const data = getDayData(date);
+
+  return GROUPS.reduce((acc, group) => acc + (data[group.key]?.length || 0), 0);
+};
+
+const previewGroups = (date) => {
+  const data = getDayData(date);
+
+  return GROUPS.map((group) => ({
+    ...group,
+
+    people: data[group.key] || [],
+  }));
+};
+
+const dayNumber = (date) => dayjs(date).date();
+
+const isToday = (date) => dayjs(date).isSame(dayjs(), "day");
+
+onMounted(() => {
+  updateCompactFlag();
+  if (typeof window !== "undefined") {
+    window.addEventListener("resize", updateCompactFlag);
+  }
+  fetchSchedule();
+  if (isAdmin.value) {
+    loadEmployees();
+  }
+});
+
+onBeforeUnmount(() => {
+  if (typeof window !== "undefined") {
+    window.removeEventListener("resize", updateCompactFlag);
+  }
+});
+
+watch(isAdmin, (next) => {
+  if (next) {
+    loadEmployees();
+  } else {
+    employees.value = [];
+  }
+});
+</script>
+
+<style scoped lang="scss">
+.schedule-page {
+  height: 100vh;
+
+  display: flex;
+
+  flex-direction: column;
+
+  background: radial-gradient(circle at 10% 20%,
+      rgba(255, 255, 255, 0.06),
+      transparent 30%),
+    radial-gradient(circle at 90% 10%,
+      rgba(255, 255, 255, 0.05),
+      transparent 25%),
+    linear-gradient(180deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+}
+
+.schedule-page :deep(.el-calendar__header) {
+  display: none;
+}
+
+.schedule-page__body {
+  flex: 1;
+
+  padding: 20px 16px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  min-height: 0;
+}
+
+.schedule-grid {
+  flex: 1;
+
+  min-height: 0;
+
+  display: grid;
+
+  grid-template-columns: minmax(0, 1.5fr) minmax(260px, 0.7fr);
+
+  gap: 16px;
+}
+
+.schedule-grid--full {
+  grid-template-columns: 1fr;
+}
+
+.schedule-grid__calendar {
+  background: var(--bg-surface-2);
+
+  border: 1px solid var(--border-color);
+
+  display: flex;
+
+  flex-direction: column;
+
+  height: 100%;
+
+  min-height: 0;
+}
+
+:deep(.schedule-grid__calendar .el-card__body) {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+
+  min-height: 0;
+}
+
+:deep(.el-calendar-table .el-calendar-day:hover) {
+  background: transparent;
+
+  transform: none;
+}
+
+:deep(.el-calendar-table .el-calendar-day) {
+  height: auto !important;
+}
+
+.schedule-grid__employees {
+  background: var(--bg-surface-2);
+
+  border: 1px solid var(--border-color);
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+}
+
+.employee-header {
+  margin-bottom: 6px;
+}
+
+.employee-header h3 {
+  color: var(--text-primary);
+
+  margin: 0;
+}
+
+.employee-hint {
+  margin: 4px 0 0;
+
+  color: var(--text-secondary);
+
+  font-size: 12px;
+}
+
+.employee-list {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 8px;
+
+  min-height: 60px;
+
+  align-items: flex-start;
+}
+
+.employee-pill {
+  cursor: grab;
+
+  user-select: none;
+}
+
+.employee-pill__content {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 6px;
+}
+
+.employee-pill__avatar {
+  flex-shrink: 0;
+
+  height: 18px;
+
+  width: 18px;
+
+  font-size: 10px;
+}
+
+.employee-pill__name {
+  font-size: 12px;
+
+  white-space: nowrap;
+}
+
+.schedule-card__header {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 12px;
+
+  flex-wrap: wrap;
+
+  margin-bottom: 12px;
+}
+
+.schedule-card__title {
+  margin: 0;
+
+  color: var(--text-primary);
+}
+
+.schedule-card__subtitle {
+  margin: 4px 0 0;
+
+  color: var(--text-secondary);
+}
+
+.schedule-card__controls {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  flex-wrap: wrap;
+}
+
+.schedule-card__legend {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 8px;
+
+  font-size: 12px;
+
+  color: var(--text-secondary);
+
+  margin-bottom: 6px;
+}
+
+.schedule-card__legend-item {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  padding: 4px 8px;
+
+  border-radius: 999px;
+
+  border: 1px solid transparent;
+}
+
+.schedule-card__legend-item span {
+  font-size: 12px;
+}
+
+.schedule-card__legend-item--opening {
+  border-color: #22c55e;
+
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.schedule-card__legend-item--closing {
+  border-color: #f59e0b;
+
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.schedule-card__legend-item--helpers {
+  border-color: #0284c7;
+
+  background: rgba(2, 132, 199, 0.15);
+}
+
+.schedule-card__scroll {
+  flex: 1;
+
+  min-height: 0;
+
+  overflow: auto;
+}
+
+.schedule-card__scroll :deep(.el-calendar) {
+  min-height: 0;
+}
+
+.schedule-card__buttons {
+  display: flex;
+
+  gap: 6px;
+
+  flex-wrap: wrap;
+}
+
+.schedule-date {
+  min-height: 120px;
+
+  border-radius: 10px;
+
+  padding: 6px;
+
+  transition: background 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+
+  border: 1px solid transparent;
+
+  cursor: default;
+}
+
+.schedule-date.is-today {
+  border-color: #409eff;
+}
+
+.schedule-date.has-current-user {
+  border-color: #22c55e;
+
+  background: rgba(34, 197, 94, 0.12);
+
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.2);
+}
+
+.schedule-date.has-current-user--opening {
+  border-color: #22c55e;
+
+  background: rgba(34, 197, 94, 0.12);
+
+  box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.25);
+}
+
+.schedule-date.has-current-user--closing {
+  border-color: #f59e0b;
+
+  background: rgba(245, 158, 11, 0.14);
+
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.25);
+}
+
+.schedule-date.has-current-user--helpers {
+  border-color: #0284c7;
+
+  background: rgba(2, 132, 199, 0.14);
+
+  box-shadow: 0 0 0 1px rgba(2, 132, 199, 0.25);
+}
+
+.schedule-date.is-compact {
+  min-height: 32px;
+  padding: 6px 4px;
+  cursor: pointer;
+}
+
+.schedule-date.is-compact .schedule-date__header {
+  margin-bottom: 0;
+}
+
+.schedule-date.is-compact .schedule-date__day {
+  font-size: 14px;
+}
+
+.schedule-date.is-compact :deep(.el-tag) {
+
+  padding: 0 6px;
+
+  height: 22px;
+
+  line-height: 20px;
+}
+
+.schedule-date__header {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  margin-bottom: 6px;
+
+  gap: 6px;
+}
+
+.schedule-date__day {
+  font-weight: 700;
+}
+
+.schedule-date__groups {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 6px;
+}
+
+.schedule-date__group {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 2px;
+
+  padding: 4px 0;
+
+  border-bottom: 1px dashed transparent;
+}
+
+.schedule-date__group:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.schedule-date__group-name {
+  font-size: 12px;
+
+  color: var(--text-secondary);
+}
+
+.schedule-date__person {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  max-width: 100%;
+}
+
+.schedule-date__person-avatar {
+  flex-shrink: 0;
+
+  height: 18px;
+
+  width: 18px;
+
+  font-size: 10px;
+}
+
+.schedule-date__person-name {
+  font-size: 12px;
+
+  white-space: nowrap;
+
+  display: inline-block;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  max-width: 100%;
+}
+
+.schedule-date__people {
+  display: flex;
+
+  justify-content: space-around;
+
+  align-items: center;
+
+  gap: 4px;
+
+  flex-wrap: wrap;
+}
+
+/* keep tags within the cell width so dragged items don't overflow */
+
+.schedule-date__people :deep(.el-tag) {
+  width: 100%;
+
+  min-width: 0;
+
+  box-sizing: border-box;
+}
+
+.schedule-date__people :deep(.el-tag__content) {
+  width: 80%;
+}
+
+.schedule-date__more {
+  font-size: 12px;
+
+  color: var(--text-secondary);
+}
+
+.schedule-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.schedule-dialog__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.schedule-date__group--dialog {
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.schedule-date__people--dialog {
+  gap: 6px;
+  justify-content: flex-start;
+}
+
+.schedule-dialog__empty {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 4px 0;
+}
+
+@media (max-width: 900px) {
+
+  .schedule-card__header {
+    align-items: flex-start;
+  }
+
+  .schedule-card__controls {
+    width: 100%;
+  }
+
+  .schedule-card__buttons {
+    width: 100%;
+
+    justify-content: flex-start;
+
+    gap: 4px;
+  }
+
+  .schedule-card__scroll :deep(.el-calendar__body) {
+    padding: 0;
+  }
+
+  .schedule-card__scroll :deep(.el-calendar-table td) {
+    padding: 2px;
+  }
+
+  .schedule-card__scroll :deep(.el-calendar-table .el-calendar-day) {
+    padding: 4px;
+    height: 30px;
+  }
+
+  .schedule-date__groups {
+    display: none;
+  }
+
+  .schedule-date__header {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 960px) {
+  .schedule-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-grid__employees {
+    order: -1;
+  }
+
+  .employee-list {
+    justify-content: flex-start;
+  }
+}
+</style>

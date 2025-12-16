@@ -1,5 +1,7 @@
-import { supabase } from "@/lib/supabaseClient";
 import { createRouter, createWebHashHistory } from "vue-router";
+import pinia from "@/store";
+import { useAuthStore } from "@/store/auth";
+import { getToken } from "@/api/client";
 
 const routes = [
   {
@@ -37,13 +39,40 @@ const routes = [
     component: () => import("../views/ProfilePage.vue"),
   },
   {
-    path: "/magic-link",
-    name: "magic-link",
+    path: "/admin-settings",
+    name: "admin-settings",
+    meta: {
+      layout: "main",
+      auth: true,
+    },
+    component: () => import("../views/AdminSettingsPage.vue"),
+  },
+  {
+    path: "/schedule",
+    name: "schedule",
+    meta: {
+      layout: "main",
+      auth: true,
+    },
+    component: () => import("../views/SchedulePage.vue"),
+  },
+  {
+    path: "/edit-shema",
+    name: "edit-shema",
+    meta: {
+      layout: "main",
+      auth: true,
+    },
+    component: () => import("../views/EditSchemaPage.vue"),
+  },
+  {
+    path: "/magic/confirm",
+    name: "magic-confirm",
     meta: {
       layout: "auth",
       auth: false,
     },
-    component: () => import("../views/MagicLinkPage.vue"),
+    component: () => import("../views/MagicConfirmPage.vue"),
   },
 ];
 
@@ -52,17 +81,18 @@ const router = createRouter({
   routes,
 });
 
-async function getUser(next) {
-  let localUser = await supabase.auth.getSession();
-  if (localUser.data.session == null) {
-    next("/login");
-  } else {
-    next();
-  }
-}
-router.beforeEach((to, from, next) => {
+const authStore = useAuthStore(pinia);
+
+router.beforeEach((to, _from, next) => {
   if (to.meta.auth) {
-    getUser(next);
+    const token = getToken();
+    if (token) {
+      next();
+    } else if (authStore.isAuthenticated) {
+      next();
+    } else {
+      next("/login");
+    }
   } else {
     next();
   }

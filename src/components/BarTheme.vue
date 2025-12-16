@@ -20,15 +20,18 @@
         xmlns="http://www.w3.org/2000/svg"
       >
         <rect x="0" y="0" width="100%" fill="var(--canvas-bg)" />
-        <line x1="0" y1="120" x2="100%" y2="120" stroke="var(--border-color)" stroke-width="2" />
-
-        <!-- Зал (12) -->
-        <g class="hall" @click="openRoom" v-if="!isRoomReserved">
-          <rect x="0" y="0" width="100%" height="120" fill="url(#hallGradient)" />
-        </g>
-
+        <line
+          v-for="line in separatorLines"
+          :key="line.id"
+          :x1="line.orientation === 'v' ? line.x : 0"
+          :y1="line.orientation === 'v' ? 0 : line.y"
+          :x2="line.orientation === 'v' ? line.x : SCHEMA_WIDTH"
+          :y2="line.orientation === 'v' ? SCHEMA_HEIGHT : line.y"
+          :stroke-width="line.thickness || 2"
+          stroke="var(--border-color)"
+        />
         <g
-          v-for="table in svgTables"
+          v-for="table in tablesWithFill.tables"
           :key="table.id"
           :transform="table.transform"
           class="table-node"
@@ -37,21 +40,17 @@
           <component
             :is="table.shape"
             v-bind="table.shapeProps"
-            :fill="tableColor(table.id)"
+            :fill="table.fill"
+            :fill-opacity="table.fillOpacity"
             stroke="#111827"
+            :stroke-opacity="table.fillOpacity"
             stroke-width="2"
           />
           <text x="0" y="4" text-anchor="middle" font-size="12" fill="#0b1220" font-weight="700">
             {{ table.label }}
           </text>
         </g>
-        <g class="hall" @click="openRoom" v-if="isRoomReserved">
-          <rect x="0" y="0" width="100%" height="120" fill="url(#hallGradient)" />
-          <text x="50%" y="60" text-anchor="middle" font-size="22" fill="#fff" font-weight="700">
-            Комната занята
-          </text>
-        </g>
-        <defs>
+       <defs>
           <linearGradient id="hallGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" :stop-color="isRoomReserved ? '#ef4444' : '#22c55e'" stop-opacity="0.65" />
             <stop offset="100%" stop-color="#0b1220" stop-opacity="0.6" />
@@ -72,86 +71,126 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref, watch, defineExpose } from "vue";
-import { useStore } from "vuex";
+import { computed, ref, watch, onMounted, onUnmounted } from "vue";
+import { storeToRefs } from "pinia";
 import { ElMessage } from "element-plus";
 import ModalApp from "./ModalApp.vue";
-import { sendPushMessage } from "@/telegram/telegramSendMessage";
+import { useDataStore } from "@/store/dataBase";
+import { useAuthStore } from "@/store/auth";
+import { api } from "@/api/client";
+import { getSocket } from "@/lib/socket";
 
-const store = useStore();
+const dataStore = useDataStore();
+const authStore = useAuthStore();
+const { date, reservation: storeReservation } = storeToRefs(dataStore);
+const { user } = storeToRefs(authStore);
 const loading = ref(false);
 const dialogVisible = ref(false);
 const selectedTable = ref("");
 const reservations = ref([]);
+const userId = computed(() => user.value?.uuid);
 
-const date = computed(() => store.getters.date);
-const storeReservations = computed(() => store.getters.reservation || []);
-const currentUser = computed(() => store.getters.user || {});
-const userId = computed(() => currentUser.value?.id || "");
+const storeReservations = computed(() => storeReservation.value || []);
 
-const tables = reactive({
-  table_1: [],
-  table_2: [],
-  table_3: [],
-  table_4: [],
-  table_5: [],
-  table_6: [],
-  table_7: [],
-  table_8: [],
-  table_9: [],
-  table_10: [],
-  pull: [],
-  room: [],
+const SCHEMA_WIDTH = 214;
+const SCHEMA_HEIGHT = 325;
+
+const normalizeOpacity = (value) => {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 1;
+  return Math.max(0, Math.min(1, num));
+};
+
+const schemaConfig = ref(null);
+const schemaCache = ref(null);
+let socket;
+
+const filterByTable = (tableId) => reservations.value.filter((item) => item.table === tableId);
+
+const tablesWithFill = computed(() => {
+  const source = schemaConfig.value?.tables;
+  const globals = schemaConfig.value?.colors || {};
+  const baseDefault = globals.base || "#38bdf8";
+  const bookedDefault = globals.booked || "#ef4444";
+
+  const mapTable = (table) => {
+    const shape = table.shape === "circle" ? "circle" : "rect";
+    const z = table.z ?? 0;
+    const zBooked = table.zBooked;
+    const isBooked = filterByTable(String(table.id)).length > 0;
+    const effectiveZ = isBooked && Number.isFinite(zBooked) ? zBooked : z;
+
+    const baseColor = table.colorBase || baseDefault;
+    const bookedColor = table.colorBooked || bookedDefault;
+    const baseOpacity = normalizeOpacity(table.opacityBase);
+    const bookedOpacity = normalizeOpacity(table.opacityBooked);
+
+    const primaryColor = isBooked ? bookedColor : baseColor;
+    const opacity = isBooked ? bookedOpacity : baseOpacity;
+    const fill = primaryColor;
+
+    if (shape === "circle") {
+      return {
+        id: String(table.id),
+        label: table.label || String(table.id),
+        shape,
+        z: effectiveZ,
+        fill,
+        fillOpacity: opacity,
+        transform: `translate(${table.x ?? 0},${table.y ?? 0})`,
+        shapeProps: { r: table.r ?? 16 },
+      };
+    }
+    const width = table.width ?? 40;
+    const height = table.height ?? 30;
+    return {
+      id: String(table.id),
+      label: table.label || String(table.id),
+      shape,
+      z: effectiveZ,
+      fill,
+      fillOpacity: opacity,
+      transform: `translate(${table.x ?? 0},${table.y ?? 0})`,
+      shapeProps: { x: -width / 2, y: -height / 2, width, height, rx: table.rx ?? 6 },
+    };
+  };
+
+  const tablesSource = Array.isArray(source) ? source : [];
+  const normalized = tablesSource
+    .map((item) => mapTable(item))
+    .sort((a, b) => (a.z ?? 0) - (b.z ?? 0) || a.id.localeCompare(b.id));
+
+  return { tables: normalized, gradients: [] };
 });
 
-const svgTables = [
-  { id: "11", label: "Pull", shape: "rect", transform: "translate(35,60)", shapeProps: { x: -20, y: -15, width: 40, height: 30, rx: 6 } },
-  { id: "8", label: "8", shape: "rect", transform: "translate(107,40)", shapeProps: { x: -20, y: -15, width: 40, height: 30, rx: 6 } },
-  { id: "9", label: "9", shape: "rect", transform: "translate(170,60)", shapeProps: { x: -20, y: -15, width: 40, height: 30, rx: 6 } },
-  { id: "10", label: "10", shape: "rect", transform: "translate(107,90)", shapeProps: { x: -20, y: -15, width: 40, height: 30, rx: 6 } },
-  { id: "1", label: "1", shape: "rect", transform: "translate(35,140)", shapeProps: { x: -30, y: -15, width: 60, height: 30, rx: 6 } },
-  { id: "2", label: "2", shape: "circle", transform: "translate(190,140)", shapeProps: { r: 16 } },
-  { id: "3", label: "3", shape: "rect", transform: "translate(35,210)", shapeProps: { x: -30, y: -15, width: 60, height: 30, rx: 6 } },
-  { id: "4", label: "4", shape: "circle", transform: "translate(90,210)", shapeProps: { r: 16 } },
-  { id: "5", label: "5", shape: "rect", transform: "translate(140,210)", shapeProps: { x: -30, y: -15, width: 60, height: 30, rx: 6 } },
-  { id: "6", label: "6", shape: "circle", transform: "translate(190,210)", shapeProps: { r: 16 } },
-  { id: "7", label: "7", shape: "circle", transform: "translate(35,280)", shapeProps: { r: 16 } },
-];
+const separatorLines = computed(() => {
+  const source = schemaConfig.value?.separators;
+  const lines = Array.isArray(source) ? source : [];
+  return lines.map((line) => ({
+    id: line.id || `sep-${line.orientation || "h"}-${line.y ?? line.x ?? 0}`,
+    orientation: line.orientation === "v" ? "v" : "h",
+    x: line.x ?? SCHEMA_WIDTH / 2,
+    y: line.y ?? SCHEMA_HEIGHT / 2,
+    thickness: line.thickness || 2,
+  }));
+});
 
 const selectedTableReservations = computed(() =>
   selectedTable.value ? filterByTable(selectedTable.value) : []
 );
 
-const isRoomReserved = computed(() => tables.room.length > 0);
+const isRoomReserved = computed(() => filterByTable("12").length > 0);
 
-const filterByTable = (tableId) =>
-  reservations.value.filter((item) => item.table === tableId);
-
-const populateTables = () => {
-  tables.table_1 = filterByTable("1");
-  tables.table_2 = filterByTable("2");
-  tables.table_3 = filterByTable("3");
-  tables.table_4 = filterByTable("4");
-  tables.table_5 = filterByTable("5");
-  tables.table_6 = filterByTable("6");
-  tables.table_7 = filterByTable("7");
-  tables.table_8 = filterByTable("8");
-  tables.table_9 = filterByTable("9");
-  tables.table_10 = filterByTable("10");
-  tables.pull = filterByTable("11");
-  tables.room = filterByTable("12");
-};
-
-const fetchReservations = async () => {
+const fetchReservations = async ({ silent = false } = {}) => {
   if (!date.value) return;
-  loading.value = true;
+  if (!silent) loading.value = true;
   try {
-    const data = await store.dispatch("fetchInfo");
+    const data = await dataStore.fetchInfo();
     reservations.value = data || [];
   } catch (error) {
     console.log(error);
   } finally {
-    loading.value = false;
+    if (!silent) loading.value = false;
   }
 };
 
@@ -159,7 +198,7 @@ const delReserve = async ({ id }) => {
   if (!id) return;
   loading.value = true;
   try {
-    const status = await store.dispatch("delInfo", { id });
+    const status = await dataStore.delInfo({ id });
     if (status === 204 || status === "204") {
       await fetchReservations();
       ElMessage.success("Бронь удалена");
@@ -177,33 +216,24 @@ const creatReserve = async (data) => {
     ElMessage.warning("Заполните время и телефон");
     return;
   }
-  if (!userId.value) {
+  if (!userId?.value) {
     ElMessage.error("Не удалось определить пользователя и передать id");
     return;
   }
   loading.value = true;
   try {
-    const status = await store.dispatch("creatInfo", {
-      data: { ...data, numTable: targetTable, userId: userId.value },
+    const status = await dataStore.creatInfo({
+      data: { ...data, numTable: targetTable, user_id: userId.value },
     });
     if (status === 201 || status === "201") {
       await fetchReservations();
       ElMessage.success("Бронь добавлена");
-      sendPushMessage({ ...data, numTable: targetTable }, date.value).catch(
-        (error) => console.log(error)
-      );
     } else {
       ElMessage.error(status);
     }
   } finally {
     loading.value = false;
   }
-};
-
-const tableColor = (tableId) => {
-  const has = filterByTable(tableId).length > 0;
-  if (tableId === "12") return has ? "#ef4444" : "#22c55e";
-  return has ? "#ef4444" : "#38bdf8";
 };
 
 const openTable = (tableId) => {
@@ -215,12 +245,93 @@ const openRoom = () => openTable("12");
 
 defineExpose({ openRoom });
 
+const SCHEMA_STORAGE_KEY = "schema-cache";
+
+const loadLocalSchema = () => {
+  try {
+    const raw = localStorage.getItem(SCHEMA_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    schemaCache.value = parsed;
+    return parsed;
+  } catch (error) {
+    console.log("schema local load", error);
+    return null;
+  }
+};
+
+const saveLocalSchema = (schema, updatedAt) => {
+  try {
+    const payload = { schema, updated_at: updatedAt ?? Date.now() };
+    localStorage.setItem(SCHEMA_STORAGE_KEY, JSON.stringify(payload));
+    schemaCache.value = payload;
+  } catch (error) {
+    console.log("schema local save", error);
+  }
+};
+
+const applySchema = (payload) => {
+  if (!payload) return;
+  schemaConfig.value = payload?.schema ?? payload ?? null;
+};
+
+const fetchRemoteSchema = async () => {
+  try {
+    const resp = await api.getSchema();
+    const remoteSchema = resp?.schema ?? resp ?? null;
+    const remoteUpdated = resp?.updated_at ?? resp?.updatedAt ?? null;
+    const localUpdated = schemaCache.value?.updated_at ?? schemaCache.value?.updatedAt ?? null;
+    if (remoteUpdated && localUpdated && remoteUpdated === localUpdated) {
+      return;
+    }
+    if (remoteSchema) {
+      applySchema(remoteSchema);
+      saveLocalSchema(remoteSchema, remoteUpdated);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const handleSchemaUpdated = (payload) => {
+  const incomingSchema = payload?.schema ?? payload ?? null;
+  const updatedAt = payload?.updated_at ?? payload?.updatedAt ?? Date.now();
+  if (!incomingSchema) return;
+  applySchema(incomingSchema);
+  saveLocalSchema(incomingSchema, updatedAt);
+};
+
+const handleTableChanged = () => {
+  fetchReservations({ silent: true });
+};
+
+onMounted(() => {
+  const local = loadLocalSchema();
+  if (local?.schema) {
+    applySchema(local.schema);
+  }
+  fetchRemoteSchema();
+  socket = getSocket();
+  if (socket) {
+    socket.on("schema_updated", handleSchemaUpdated);
+    socket.on("table_created", handleTableChanged);
+    socket.on("table_deleted", handleTableChanged);
+  }
+});
+
+onUnmounted(() => {
+  if (socket) {
+    socket.off("schema_updated", handleSchemaUpdated);
+    socket.off("table_created", handleTableChanged);
+    socket.off("table_deleted", handleTableChanged);
+  }
+});
+
 watch(date, () => fetchReservations(), { immediate: true });
-watch(reservations, () => populateTables(), { immediate: true, deep: true });
 watch(
   storeReservations,
   (value) => {
-    reservations.value = value;
+    reservations.value = value || [];
   },
   { immediate: true, deep: true }
 );

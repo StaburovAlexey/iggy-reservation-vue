@@ -1,70 +1,52 @@
-import { supabase } from "@/lib/supabaseClient";
+import { defineStore } from "pinia";
+import { api } from "@/api/client";
 
-export default {
-  state: {
+export const useDataStore = defineStore("dataBase", {
+  state: () => ({
     reservation: [],
     date: "",
-  },
+  }),
   actions: {
-    async fetchInfo({ commit, state }) {
-      const { data, error } = await supabase
-        .from("tables")
-        .select(
-          `
-            *,
-            user:profiles (
-              email,
-              full_name,
-              avatar_url
-            )
-          `
-        )
-        .eq("date", state.date);
-      if (error) {
-        throw error;
-      } else {
-        commit("setReserve", data);
-        return data;
-      }
+    setReserve(reservation) {
+      this.reservation = reservation || [];
     },
-    async delInfo({}, { id }) {
-      // supabase.eq сам добавляет оператор, поэтому убираем возможный префикс "eq."
+    setDate(date) {
+      this.date = date || "";
+    },
+    async fetchInfo() {
+      const resp = await api.getTables(this.date || undefined);
+      const items = resp?.items || resp || [];
+      this.setReserve(items);
+      return items;
+    },
+
+    async delInfo({ id }) {
       const cleanId = typeof id === "string" ? id.replace(/^eq\./, "") : id;
-      const { error, status } = await supabase
-        .from("tables")
-        .delete()
-        .eq("id", cleanId);
-      if (error) {
+      try {
+        const resp = await api.deleteTable(cleanId);
+        return resp?.success ? 204 : resp?.status || resp;
+      } catch (error) {
         console.log("del", error);
+        throw error;
       }
-      return status;
     },
-    async creatInfo({ state }, { data }) {
-      const { error, status } = await supabase.from("tables").insert({
+    async creatInfo({ data }) {
+      const payload = {
         table: `${data.numTable}`,
         name: data.name,
         person: data.person,
         time: data.time,
         phone: data.tel,
-        date: state.date,
-        user_id: data.userId,
-      });
-      if (error) {
+        date: this.date,
+        user_id: data.user_id,
+      };
+      try {
+        await api.createTable(payload);
+        return 201;
+      } catch (error) {
         console.log(error);
+        throw error;
       }
-      return status;
     },
   },
-  mutations: {
-    setReserve(state, reservation) {
-      state.reservation = reservation;
-    },
-    setDate(state, date) {
-      state.date = date;
-    },
-  },
-  getters: {
-    reservation: (s) => s.reservation,
-    date: (s) => s.date,
-  },
-};
+});
