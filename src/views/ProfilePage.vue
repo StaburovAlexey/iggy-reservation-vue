@@ -152,7 +152,7 @@ const saveProfile = async () => {
       payload.name = form.fullName;
     }
     if (form.email && form.email !== original.email) {
-      payload.login = form.email;
+      payload.login = (form.email || "").trim().toLowerCase();
     }
     if (form.password) {
       payload.password = form.password;

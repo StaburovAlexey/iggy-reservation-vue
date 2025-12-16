@@ -53,7 +53,7 @@ const disabled = computed(() => !form.email || !form.pass);
 const submit = async () => {
   loading.value = true;
   try {
-    await authStore.login({ email: form.email, pass: form.pass });
+    await authStore.login({ email: (form.email || "").trim().toLowerCase(), pass: form.pass });
     router.push("/");
   } catch (error) {
     ElMessage.error("Ошибка авторизации");
