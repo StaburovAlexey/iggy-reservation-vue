@@ -21,17 +21,17 @@
 #   (альтернатива) base64 -w0 .env
 #
 # Путь назначения должен совпадать с nginx root:
-#   /var/www/reserve.dev.alexeystaburov.ru/html
+#   /var/www/app.reserve.alexeystaburov.ru/html
 
 name: Deploy frontend via SSH
 
 on:
   push:
-    branches: ["dev"]
+    branches: ["main"]
   workflow_dispatch:
 
 env:
-  FRONTEND_REMOTE_DIR: "/var/www/reserve.dev.alexeystaburov.ru/html"
+  FRONTEND_REMOTE_DIR: "/var/www/app.reserve.alexeystaburov.ru/html"
 
 jobs:
   deploy:
@@ -46,11 +46,11 @@ jobs:
 
       - name: (Optional) Create .env from secret
         env:
-          FRONTEND_ENV_B64: ${{ secrets.FRONTEND_ENV_B64 }}
-        if: ${{ env.FRONTEND_ENV_B64 != '' }}
+          FRONTEND_ENV_B64_PROD: ${{ secrets.FRONTEND_ENV_B64_PROD }}
+        if: ${{ env.FRONTEND_ENV_B64_PROD != '' }}
         run: |
           set -euxo pipefail
-          echo "${{ secrets.FRONTEND_ENV_B64 }}" | base64 -d > .env
+          echo "${{ secrets.FRONTEND_ENV_B64_PROD }}" | base64 -d > .env
           tr -d '\r' < .env > .env.tmp && mv .env.tmp .env
           echo ".env создан (первые строки):"
           head -n 5 .env | sed 's/=.*/=<hidden>/'
@@ -59,7 +59,7 @@ jobs:
         run: |
           set -euxo pipefail
           npm ci
-          npm run build:dev
+          npm run build:prod
           test -d dist
           ls -la dist
 
