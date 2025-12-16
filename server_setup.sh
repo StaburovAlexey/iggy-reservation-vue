@@ -542,7 +542,7 @@ setup_pm2_for_project() {
 write_deploy_yml_to_tmp() {
   # Генерация /tmp/deploy.yml (деплой фронтенда через rsync по SSH) + Telegram уведомления.
   # Используем SSH_KEY_B64, чтобы избежать ошибок libcrypto на runner'е.
-  # Опционально: FRONTEND_ENV_B64 (base64 содержимого .env) — создаст .env перед сборкой.
+  # Опционально: FRONTEND_ENV_B64 или FRONTEND_ENV_B64_PROD (base64 содержимого .env) — создаст .env перед сборкой.
 
   local FRONT_DOMAIN="${1:-}"
 
@@ -550,7 +550,22 @@ write_deploy_yml_to_tmp() {
   read -rp "${COLOR_ASK}Ветка для автодеплоя (по умолчанию: ${BRANCH_DEFAULT}): ${COLOR_RESET}" BR_IN
   local BRANCH="${BR_IN:-$BRANCH_DEFAULT}"
 
-  local BUILD_CMD_DEFAULT="build"
+  # Спрашиваем у пользователя тип сборки
+  local BUILD_TYPE_DEFAULT="dev"
+  read -rp "${COLOR_ASK}Тип сборки (prod/dev, по умолчанию: ${BUILD_TYPE_DEFAULT}): ${COLOR_RESET}" BUILD_TYPE_IN
+  local BUILD_TYPE="${BUILD_TYPE_IN:-$BUILD_TYPE_DEFAULT}"
+
+  # Определяем команду сборки и используемый секрет для .env в зависимости от типа сборки
+  local BUILD_CMD_DEFAULT
+  local ENV_SECRET_NAME
+  if [ "$BUILD_TYPE" = "prod" ]; then
+    BUILD_CMD_DEFAULT="build:prod"
+    ENV_SECRET_NAME="FRONTEND_ENV_B64_PROD"
+  else
+    BUILD_CMD_DEFAULT="build:dev"
+    ENV_SECRET_NAME="FRONTEND_ENV_B64"
+  fi
+
   read -rp "${COLOR_ASK}Команда сборки (npm run ...) для фронтенда (по умолчанию: ${BUILD_CMD_DEFAULT}): ${COLOR_RESET}" BUILD_IN
   local BUILD_CMD="${BUILD_IN:-$BUILD_CMD_DEFAULT}"
 
@@ -572,15 +587,15 @@ write_deploy_yml_to_tmp() {
 #   TG_BOT_TOKEN      = токен Telegram бота (BotFather)
 #   TG_CHAT_ID        = chat_id куда слать уведомления
 #
-# (Опционально для сборки) FRONTEND_ENV_B64 = base64 содержимого .env (в одну строку)
-#   - Если Secret FRONTEND_ENV_B64 задан, workflow создаст файл .env перед сборкой.
+# (Опционально для сборки) ${ENV_SECRET_NAME} = base64 содержимого .env (в одну строку)
+#   - Если Secret ${ENV_SECRET_NAME} задан, workflow создаст файл .env перед сборкой.
 #   - Для Vite переменные должны быть с префиксом VITE_ (иначе они не попадут в клиентский код).
 #
 # Как получить SSH_KEY_B64 на сервере (одной строкой):
 #   openssl base64 -A -in /home/deploy/.ssh/gh_actions_ed25519
 #   (альтернатива) base64 -w0 /home/deploy/.ssh/gh_actions_ed25519
 #
-# Как получить FRONTEND_ENV_B64 на своём ПК (одной строкой):
+# Как получить ${ENV_SECRET_NAME} на своём ПК (одной строкой):
 #   openssl base64 -A -in .env
 #   (альтернатива) base64 -w0 .env
 #
@@ -610,11 +625,11 @@ jobs:
 
       - name: (Optional) Create .env from secret
         env:
-          FRONTEND_ENV_B64: \${{ secrets.FRONTEND_ENV_B64 }}
-        if: \${{ env.FRONTEND_ENV_B64 != '' }}
+          ${ENV_SECRET_NAME^^}: \${{ secrets.${ENV_SECRET_NAME^^} }}
+        if: \${{ env.${ENV_SECRET_NAME^^} != '' }}
         run: |
           set -euxo pipefail
-          echo "\${{ secrets.FRONTEND_ENV_B64 }}" | base64 -d > .env
+          echo "\${{ secrets.${ENV_SECRET_NAME^^} }}" | base64 -d > .env
           tr -d '\r' < .env > .env.tmp && mv .env.tmp .env
           echo ".env создан (первые строки):"
           head -n 5 .env | sed 's/=.*/=<hidden>/'
@@ -717,7 +732,8 @@ print(base64.b64encode(open(p,'rb').read()).decode())
 PY
   fi
   echo
-  echo "${COLOR_OK}(Опционально для сборки фронта) FRONTEND_ENV_B64 = base64 содержимого вашего .env${COLOR_RESET}"
+  echo "${COLOR_OK}(Опционально для сборки фронта) FRONTEND_ENV_B64 = base64 содержимого вашего .env (для dev сборки)${COLOR_RESET}"
+  echo "${COLOR_OK}(Опционально для сборки фронта) FRONTEND_ENV_B64_PROD = base64 содержимого вашего .env (для prod сборки)${COLOR_RESET}"
   echo "${COLOR_OK}  На вашем ПК: base64 -w0 .env    (или: base64 .env | tr -d '\n')${COLOR_RESET}"
   echo "${COLOR_OK}===================================================================${COLOR_RESET}"
   echo
